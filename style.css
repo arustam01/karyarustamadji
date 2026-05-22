@@ -1,0 +1,179 @@
+/* =============================================================
+   Rustamadji Gallery — Global Styles
+   Museum-editorial aesthetic: parchment, umber, antique gold
+   ============================================================= */
+
+:root {
+  --color-parchment-50:  #fbf8f1;
+  --color-parchment-100: #f5efe4;
+  --color-parchment-200: #ebe1cd;
+  --color-parchment-300: #dcc9a6;
+  --color-parchment-400: #c9aa7a;
+  
+  --color-umber-400: #7a5d44;
+  --color-umber-500: #5a4231;
+  --color-umber-600: #3f2e22;
+  --color-umber-700: #2c2017;
+  --color-umber-800: #1a1410;
+  --color-umber-900: #0e0a08;
+  
+  --color-ochre-400: #d4a64a;
+  --color-ochre-500: #b8924a;
+  --color-ochre-600: #947334;
+  
+  --color-dusk-400: #8a7d8e;
+  --color-dusk-500: #6b5d6f;
+  
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body:    'Inter', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+}
+
+html { 
+  scroll-behavior: smooth; 
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-parchment-100);
+  color: var(--color-umber-800);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+/* Paper grain texture overlay — pure CSS, no external asset */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.05;
+  background-image:
+    radial-gradient(var(--color-umber-600) 1px, transparent 1px),
+    radial-gradient(var(--color-umber-600) 1px, transparent 1px);
+  background-size: 3px 3px, 5px 5px;
+  background-position: 0 0, 1px 2px;
+  mix-blend-mode: multiply;
+}
+
+/* ───────────────────────────────────────────────────────────
+   Typography & Utility Classes
+   ─────────────────────────────────────────────────────────── */
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--color-dusk-500);
+}
+
+.hairline {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(58, 42, 31, 0.25),
+    transparent
+  );
+}
+
+.year-numeral {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 300;
+}
+
+/* Editorial dropcap for biography opening */
+.dropcap::first-letter {
+  font-family: var(--font-display);
+  font-size: 4.5rem;
+  float: left;
+  line-height: 0.8;
+  margin: 0.25rem 0.6rem 0 0;
+  color: var(--color-ochre-600);
+}
+
+/* Selection colour */
+::selection {
+  background: rgba(184, 146, 74, 0.35);
+  color: var(--color-umber-800);
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid var(--color-ochre-500);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ───────────────────────────────────────────────────────────
+   Page-transition animations
+   ─────────────────────────────────────────────────────────── */
+
+.view {
+  display: none;
+  animation: fadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.view.is-active {
+  display: block;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Staggered reveal for hero elements */
+.stagger > * {
+  animation: fadeUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger > *:nth-child(2) { animation-delay: 0.15s; }
+.stagger > *:nth-child(3) { animation-delay: 0.25s; }
+.stagger > *:nth-child(4) { animation-delay: 0.35s; }
+.stagger > *:nth-child(5) { animation-delay: 0.45s; }
+.stagger > *:nth-child(6) { animation-delay: 0.55s; }
+
+/* ───────────────────────────────────────────────────────────
+   Artwork card hover effect
+   ─────────────────────────────────────────────────────────── */
+
+.art-frame {
+  overflow: hidden;
+  background: var(--color-parchment-200);
+}
+.art-frame > * {
+  transition: transform 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.art-card:hover .art-frame > * {
+  transform: scale(1.04);
+}
+
+/* Vignette overlay on hover */
+.art-card:hover .art-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(26, 20, 16, 0.4),
+    transparent
+  );
+  pointer-events: none;
+  opacity: 0;
+  animation: fadeIn 0.7s forwards;
+}
+
+@keyframes fadeIn {
+  to { opacity: 1; }
+}
