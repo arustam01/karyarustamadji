@@ -71,7 +71,7 @@ This site is hardened against the **OWASP Top 10 (2021)** and **SANS CWE Top 25*
 
 ```
 default-src 'self';
-script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com;
+script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com;
 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
 font-src 'self' https://fonts.gstatic.com data:;
 img-src 'self' data: blob:;
@@ -83,7 +83,7 @@ object-src 'none';
 upgrade-insecure-requests;
 ```
 
-> **Note on `'unsafe-inline'`**: Required because Tailwind CDN injects styles dynamically. For maximum security in production, compile Tailwind locally to eliminate this directive.
+> **Note on `'unsafe-inline'` and `'unsafe-eval'`**: Required because Tailwind CDN uses `new Function()` to compile utility classes at runtime. For maximum security in production, compile Tailwind locally to eliminate both directives.
 
 ### Permissions Policy
 
