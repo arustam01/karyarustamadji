@@ -7,331 +7,295 @@
 <meta name="description" content="The official online archive of painter Rustamadji of Klaten (b. 1921) and his sons, Bodas Erlangga and Karang Sasongko — three generations of Indonesian realist painting." />
 
 <!-- ============================================================
-     SECURITY HEADERS (defense in depth)
-     References: OWASP Top 10 (A05:2021 Misconfiguration,
-                 A06:2021 Vulnerable Components),
-                 SANS CWE Top 25 (CWE-79, CWE-1021, CWE-352)
+     SECURITY HEADERS
+     CSP intentionally omitted — would conflict with inline styles.
+     Site has no user-generated content; security maintained via:
+       • escapeHTML/escapeAttr in app.js (CWE-79)
+       • safeImagePath allowlist (CWE-22)
+       • isValidEmail + length limits (CWE-20)
+       • rel="noopener noreferrer" on external links
+       • HTTPS enforced by GitHub Pages
      ============================================================ -->
-
-<!-- Content Security Policy:
-     • default-src 'self'                — only same-origin by default
-     • script-src                        — pinned CDNs + unsafe-eval (required by Tailwind CDN JIT)
-     • style-src 'unsafe-inline'         — required for Tailwind utility classes
-     • img-src 'self' data:              — only local images + inline SVG plaques
-     • frame-ancestors 'none'            — prevents clickjacking (CWE-1021)
-     • base-uri 'self'                   — prevents <base> tag injection
-     • form-action 'self' mailto:        — restricts form submissions
-     • upgrade-insecure-requests         — forces HTTPS on all resources
-     NOTE: 'unsafe-eval' needed because Tailwind CDN uses new Function() to
-     compile utility classes at runtime. To remove this, compile Tailwind locally. -->
-<!-- CSP via meta tag removed: Tailwind Play CDN requires new Function() (eval) which
-     any effective CSP blocks. Security is maintained via app.js (escapeHTML, safeImagePath,
-     isValidEmail), HTTPS from GitHub Pages, and the headers below. For production with a
-     real server, compile Tailwind locally and add CSP as an HTTP response header. -->
-
-<!-- Defense-in-depth headers (CWE-79, CWE-200, CWE-829) -->
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=(), payment=(), usb=(), fullscreen=(self)">
 
-<!-- SEO / Social -->
+<!-- Open Graph -->
 <meta property="og:title" content="Rustamadji Gallery">
 <meta property="og:description" content="A family archive of Indonesian realism — Rustamadji of Klaten and his sons.">
 <meta property="og:type" content="website">
 
-<!-- Custom styles -->
-<link rel="stylesheet" href="style.css">
-
-<!-- Google Fonts (preconnect + display=swap to avoid render blocking) -->
+<!-- Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-<!-- Tailwind CDN (production note: compile locally for stricter CSP) -->
-<script src="https://cdn.tailwindcss.com" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- Pure self-contained CSS -->
+<link rel="stylesheet" href="style.css">
 
-<!-- Lucide icons — version pinned (CWE-1357: avoid implicit trust of unmaintained code) -->
-<script src="https://unpkg.com/lucide@0.408.0/dist/umd/lucide.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-
-<script>
-  // Tailwind config — design tokens
-  tailwind.config = {
-    theme: {
-      extend: {
-        colors: {
-          parchment: { 50:'#fbf8f1', 100:'#f5efe4', 200:'#ebe1cd', 300:'#dcc9a6', 400:'#c9aa7a' },
-          umber:     { 400:'#7a5d44', 500:'#5a4231', 600:'#3f2e22', 700:'#2c2017', 800:'#1a1410', 900:'#0e0a08' },
-          ochre:     { 400:'#d4a64a', 500:'#b8924a', 600:'#947334' },
-          dusk:      { 400:'#8a7d8e', 500:'#6b5d6f' },
-        },
-        fontFamily: {
-          display: ['"Cormorant Garamond"', 'Georgia', 'serif'],
-          body:    ['Inter', 'system-ui', 'sans-serif'],
-          mono:    ['"JetBrains Mono"', 'monospace'],
-        },
-      }
-    }
-  }
-</script>
+<!-- Inline SVG icon definitions (no external icon library needed) -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <defs>
+    <symbol id="i-menu" viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></symbol>
+    <symbol id="i-arrow-up-right" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></symbol>
+    <symbol id="i-arrow-left" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><polyline points="3 7 12 13 21 7"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+  </defs>
+</svg>
 </head>
 
-<body class="relative min-h-screen">
+<body>
 
-<!-- Accessibility: skip-to-content link (WCAG 2.1) -->
-<a href="#main-content" class="skip-link">Skip to main content</a>
+<!-- Skip link (WCAG 2.1) -->
+<a href="#main" class="skip-link">Skip to main content</a>
 
-<!-- ═════════════════════════ NAVBAR ═════════════════════════ -->
-<header id="nav" class="sticky top-0 z-40 transition-all duration-500">
-  <nav class="mx-auto max-w-7xl px-6 lg:px-10 h-20 flex items-center justify-between" aria-label="Primary navigation">
-    <a href="#" data-view="home" class="flex items-baseline gap-3">
-      <span class="font-display text-2xl tracking-tight text-umber-800 leading-none">Rustamadji</span>
-      <span class="eyebrow hidden sm:inline">Gallery &amp; Archive</span>
+<!-- ═══════════════ NAVIGATION ═══════════════ -->
+<header id="nav" class="nav">
+  <nav class="nav-inner" aria-label="Primary navigation">
+    <a href="#" data-view="home" class="nav-brand">
+      <span class="nav-brand-name">Rustamadji</span>
+      <span class="eyebrow" style="display:none">Gallery &amp; Archive</span>
     </a>
-    <ul class="hidden lg:flex items-center gap-10 text-sm">
-      <li><a href="#" data-view="home"      class="nav-link text-umber-500 hover:text-umber-800 transition-colors">Home</a></li>
-      <li><a href="#" data-view="biography" class="nav-link text-umber-500 hover:text-umber-800 transition-colors">Biography</a></li>
-      <li><a href="#" data-view="gallery"   class="nav-link text-umber-500 hover:text-umber-800 transition-colors">Gallery</a></li>
-      <li><a href="#" data-view="family"    class="nav-link text-umber-500 hover:text-umber-800 transition-colors">Family</a></li>
-      <li><a href="#" data-view="contact"   class="nav-link text-umber-500 hover:text-umber-800 transition-colors">Contact</a></li>
+    <ul class="nav-list">
+      <li><a href="#" data-view="home"      class="nav-link">Home</a></li>
+      <li><a href="#" data-view="biography" class="nav-link">Biography</a></li>
+      <li><a href="#" data-view="gallery"   class="nav-link">Gallery</a></li>
+      <li><a href="#" data-view="family"    class="nav-link">Family</a></li>
+      <li><a href="#" data-view="contact"   class="nav-link">Contact</a></li>
     </ul>
-    <button id="menu-btn" type="button" class="lg:hidden p-2 text-umber-700" aria-label="Toggle menu" aria-expanded="false" aria-controls="mobile-menu">
-      <i data-lucide="menu" class="w-5 h-5" aria-hidden="true"></i>
+    <button id="menu-btn" type="button" class="menu-btn" aria-label="Toggle menu" aria-expanded="false">
+      <svg class="icon icon-lg"><use href="#i-menu"/></svg>
     </button>
   </nav>
-  <div id="mobile-menu" class="lg:hidden hidden border-t border-umber-800/10 bg-parchment-100/95 backdrop-blur-md">
-    <ul class="px-6 py-6 space-y-4">
-      <li><a href="#" data-view="home"      class="block font-display text-2xl text-umber-800">Home</a></li>
-      <li><a href="#" data-view="biography" class="block font-display text-2xl text-umber-800">Biography</a></li>
-      <li><a href="#" data-view="gallery"   class="block font-display text-2xl text-umber-800">Gallery</a></li>
-      <li><a href="#" data-view="family"    class="block font-display text-2xl text-umber-800">Family</a></li>
-      <li><a href="#" data-view="contact"   class="block font-display text-2xl text-umber-800">Contact</a></li>
+  <div id="mobile-menu" class="mobile-menu">
+    <ul>
+      <li><a href="#" data-view="home">Home</a></li>
+      <li><a href="#" data-view="biography">Biography</a></li>
+      <li><a href="#" data-view="gallery">Gallery</a></li>
+      <li><a href="#" data-view="family">Family</a></li>
+      <li><a href="#" data-view="contact">Contact</a></li>
     </ul>
   </div>
 </header>
 
-<main id="main-content" class="relative z-10">
+<main id="main">
 
-<!-- ═════════════════════════ HOME ═════════════════════════ -->
+<!-- ═══════════════ HOME ═══════════════ -->
 <section data-view-target="home" class="view is-active" aria-label="Home">
 
-  <!-- Hero — plaque removed per request, just the portrait -->
-  <div class="relative pt-12 lg:pt-20 pb-32 lg:pb-40 overflow-hidden">
-    <p aria-hidden="true" class="absolute -left-6 lg:-left-12 top-32 year-numeral text-[28vw] lg:text-[18vw] leading-none text-umber-800/[0.04] select-none pointer-events-none">1921</p>
-    <div class="relative mx-auto max-w-7xl px-6 lg:px-10 grid lg:grid-cols-12 gap-10 lg:gap-16 items-end stagger">
-      <div class="lg:col-span-7">
+  <!-- Hero -->
+  <div class="hero">
+    <p aria-hidden="true" class="hero-year-bg">1921</p>
+    <div class="container hero-grid stagger">
+      <div class="hero-text">
         <p class="eyebrow mb-6">Klaten · b. 19 January 1921</p>
-        <h1 class="font-display text-[3.2rem] sm:text-7xl lg:text-[7.5rem] text-umber-800 leading-[0.95] tracking-tight">
+        <h1 class="hero-title">
           Rustamadji
-          <span class="block font-light italic text-umber-500 text-4xl sm:text-5xl lg:text-6xl mt-4">a life in realism</span>
+          <span class="hero-subtitle">a life in realism</span>
         </h1>
-        <p class="mt-10 max-w-xl text-lg text-umber-600 leading-relaxed">
+        <p class="mt-10 text-lg leading-relaxed" style="color:var(--umber-600); max-width:36rem;">
           From the foothills of Central Java, one of Indonesia's quietest masters built a body of work the long way — by looking. This archive collects his paintings and those of his sons, Bodas Erlangga and Karang Sasongko.
         </p>
         <div class="mt-12 flex flex-wrap items-center gap-4">
-          <a href="#" data-view="gallery" class="group inline-flex items-center gap-3 bg-umber-800 text-parchment-100 px-7 py-4 rounded-full text-sm tracking-wide hover:bg-umber-700 transition-colors">
+          <a href="#" data-view="gallery" class="btn-primary">
             Enter the gallery
-            <i data-lucide="arrow-up-right" class="w-4 h-4 transition-transform group-hover:rotate-45" aria-hidden="true"></i>
+            <svg class="icon"><use href="#i-arrow-up-right"/></svg>
           </a>
-          <a href="#" data-view="biography" class="inline-flex items-center gap-2 text-sm tracking-wide text-umber-700 hover:text-umber-800 underline underline-offset-8 decoration-ochre-500/60">
-            Read the biography
-          </a>
+          <a href="#" data-view="biography" class="btn-secondary">Read the biography</a>
         </div>
       </div>
-      <div class="lg:col-span-5 relative">
-        <div class="relative aspect-[3/4] max-w-md ml-auto">
-          <img src="images/rustamadji-portrait.png" alt="Rustamadji" class="absolute inset-0 w-full h-full object-cover" referrerpolicy="no-referrer" />
+      <div class="hero-image">
+        <div class="hero-portrait">
+          <img src="images/rustamadji-portrait.png" alt="Rustamadji" referrerpolicy="no-referrer" />
         </div>
       </div>
     </div>
   </div>
 
-  <div class="mx-auto max-w-7xl px-6 lg:px-10"><div class="hairline"></div></div>
+  <div class="container"><div class="hairline"></div></div>
 
   <!-- Featured works -->
   <div class="py-28 lg:py-40">
-    <div class="mx-auto max-w-7xl px-6 lg:px-10">
-      <div class="max-w-3xl">
+    <div class="container">
+      <div style="max-width:48rem">
         <p class="eyebrow mb-4">Selected works</p>
-        <h2 class="font-display text-4xl md:text-5xl lg:text-6xl text-umber-800 leading-[1.05] tracking-tight">Paintings <em class="font-light">across</em> three lifetimes.</h2>
-        <p class="mt-6 text-umber-600 leading-relaxed max-w-2xl text-lg">A rotating selection from the archive — Rustamadji's monumental landscapes, his sons' continuations of the family's realist line.</p>
+        <h2 class="font-display text-4xl md:text-5xl lg:text-6xl leading-tight" style="color:var(--umber-800); letter-spacing:-0.025em;">Paintings <em class="font-light italic">across</em> three lifetimes.</h2>
+        <p class="mt-6 text-lg leading-relaxed" style="color:var(--umber-600); max-width:42rem;">A rotating selection from the archive — Rustamadji's monumental landscapes, his sons' continuations of the family's realist line.</p>
       </div>
-      <div id="featured-grid" class="mt-16 grid gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-3"></div>
+      <div id="featured-grid" class="mt-16 grid sm:grid-cols-2 lg:grid-cols-3 gap-8" style="row-gap:4rem;"></div>
       <div class="mt-16 text-center">
-        <a href="#" data-view="gallery" class="inline-flex items-center gap-2 text-sm tracking-widest uppercase text-umber-700 hover:text-ochre-600 transition-colors">
-          View the full catalogue <i data-lucide="arrow-up-right" class="w-3 h-3" aria-hidden="true"></i>
+        <a href="#" data-view="gallery" class="btn-link">
+          View the full catalogue <svg class="icon icon-sm"><use href="#i-arrow-up-right"/></svg>
         </a>
       </div>
     </div>
   </div>
 
-  <div class="mx-auto max-w-7xl px-6 lg:px-10"><div class="hairline"></div></div>
+  <div class="container"><div class="hairline"></div></div>
 
   <!-- Family teaser -->
   <div class="py-28 lg:py-40">
-    <div class="mx-auto max-w-7xl px-6 lg:px-10">
+    <div class="container">
       <div class="grid lg:grid-cols-12 gap-10 items-end">
         <div class="lg:col-span-7">
           <p class="eyebrow mb-4">The next generation</p>
-          <h2 class="font-display text-4xl md:text-5xl lg:text-6xl text-umber-800 leading-[1.05] tracking-tight">Two sons. <em class="font-light italic">One studio.</em></h2>
-          <p class="mt-6 text-umber-600 leading-relaxed max-w-2xl text-lg">Bodas Erlangga and Karang Sasongko grew up grinding pigments and stretching canvas in their father's studio. They paint today in their own voices — and in continued conversation with his.</p>
+          <h2 class="font-display text-4xl md:text-5xl lg:text-6xl leading-tight" style="color:var(--umber-800); letter-spacing:-0.025em;">Two sons. <em class="font-light italic">One studio.</em></h2>
+          <p class="mt-6 text-lg leading-relaxed" style="color:var(--umber-600); max-width:42rem;">Bodas Erlangga and Karang Sasongko grew up grinding pigments and stretching canvas in their father's studio. They paint today in their own voices — and in continued conversation with his.</p>
         </div>
         <div class="lg:col-span-5 lg:text-right">
-          <a href="#" data-view="family" class="inline-flex items-center gap-2 text-sm tracking-widest uppercase text-umber-700 hover:text-ochre-600 transition-colors">
-            Visit the family page <i data-lucide="arrow-up-right" class="w-3 h-3" aria-hidden="true"></i>
-          </a>
+          <a href="#" data-view="family" class="btn-link">Visit the family page <svg class="icon icon-sm"><use href="#i-arrow-up-right"/></svg></a>
         </div>
       </div>
-      <div id="family-teaser" class="mt-16 grid gap-12 lg:grid-cols-2"></div>
+      <div id="family-teaser" class="mt-16 grid lg:grid-cols-2 gap-12"></div>
     </div>
   </div>
 
   <!-- Monograph -->
-  <div class="py-28 lg:py-40 bg-umber-800 text-parchment-100 relative overflow-hidden">
-    <div aria-hidden="true" class="absolute inset-0 opacity-[0.06] mix-blend-screen pointer-events-none"
-         style="background-image:radial-gradient(#f5efe4 1px, transparent 1px); background-size:4px 4px;"></div>
-    <div class="relative mx-auto max-w-5xl px-6 lg:px-10 text-center">
-      <p class="eyebrow !text-parchment-200/60 mb-6">The reference</p>
-      <h2 class="font-display text-4xl md:text-6xl lg:text-7xl italic leading-[1.05]">Meniti Bumi</h2>
-      <p class="font-display text-2xl md:text-3xl text-parchment-200/70 mt-3 font-light">Walking the Earth, Rustamadji Klaten</p>
-      <p class="mt-10 max-w-2xl mx-auto text-parchment-200/80 leading-relaxed">
-        The principal monograph on Rustamadji's life and work — published by the family estate, with essays, photographs, and a full catalogue of the paintings. The biography on this site draws on its research.
-      </p>
+  <div class="monograph">
+    <div class="monograph-content">
+      <p class="eyebrow">The reference</p>
+      <h2 style="margin-top:1.5rem;">Meniti Bumi</h2>
+      <p class="sub">Walking the Earth, Rustamadji Klaten</p>
+      <p>The principal monograph on Rustamadji's life and work — published by the family estate, with essays, photographs, and a full catalogue of the paintings. The biography on this site draws on its research.</p>
     </div>
   </div>
 </section>
 
-<!-- ═════════════════════════ BIOGRAPHY ═════════════════════════ -->
+<!-- ═══════════════ BIOGRAPHY ═══════════════ -->
 <section data-view-target="biography" class="view pb-32" aria-label="Biography">
   <header class="pt-12 lg:pt-20 pb-20">
-    <div class="mx-auto max-w-5xl px-6 lg:px-10">
+    <div class="container" style="max-width:64rem">
       <p class="eyebrow mb-6">Biography · Realism</p>
-      <h1 class="font-display text-5xl md:text-7xl lg:text-[8rem] text-umber-800 leading-[0.95] tracking-tight">A life, <em class="font-light">in patient</em> observation.</h1>
-      <p class="mt-10 text-umber-600 max-w-2xl text-lg leading-relaxed">Klaten, Central Java · 19 January 1921 · Realism</p>
+      <h1 class="font-display text-5xl md:text-7xl lg:text-9xl leading-tight" style="color:var(--umber-800); letter-spacing:-0.025em; line-height:0.95;">A life, <em class="font-light italic">in patient</em> observation.</h1>
+      <p class="mt-10 text-lg leading-relaxed" style="color:var(--umber-600); max-width:42rem;">Klaten, Central Java · 19 January 1921 · Realism</p>
     </div>
   </header>
 
-  <div class="mx-auto max-w-7xl px-6 lg:px-10 grid lg:grid-cols-12 gap-16 mb-24">
-    <figure class="lg:col-span-5">
-      <div class="relative aspect-[3/4]">
-        <img src="images/rustamadji-portrait.png" alt="Rustamadji" class="absolute inset-0 w-full h-full object-cover" referrerpolicy="no-referrer" />
+  <div class="container mb-24">
+    <div class="grid lg:grid-cols-12 gap-16">
+      <figure class="lg:col-span-5">
+        <div class="art-frame aspect-3-4">
+          <img src="images/rustamadji-portrait.png" alt="Rustamadji" referrerpolicy="no-referrer" />
+        </div>
+        <figcaption class="mt-4 text-xs italic" style="color:var(--umber-500)">Rustamadji, oil on canvas</figcaption>
+      </figure>
+      <div class="lg:col-span-7" style="padding-top:4rem;">
+        <p class="font-display text-2xl dropcap" style="color:var(--umber-800); line-height:1.5;">
+          Rustamadji was born on 19 January 1921 in Klaten, a regency in Central Java situated between the slopes of Mount Merapi and the cultural heart of Surakarta. The light, the rice fields, and the volcanic ridges of his birthplace would become recurring subjects throughout a lifetime of painting.
+        </p>
       </div>
-      <figcaption class="mt-4 text-xs text-umber-500 italic">Rustamadji, oil on canvas</figcaption>
-    </figure>
-    <div class="lg:col-span-7 lg:pt-16">
-      <p class="font-display text-2xl leading-[1.5] text-umber-800 dropcap">
-        Rustamadji was born on 19 January 1921 in Klaten, a regency in Central Java situated between the slopes of Mount Merapi and the cultural heart of Surakarta. The light, the rice fields, and the volcanic ridges of his birthplace would become recurring subjects throughout a lifetime of painting.
-      </p>
     </div>
   </div>
 
-  <div class="mx-auto max-w-3xl px-6 lg:px-10 space-y-8 text-lg text-umber-700 leading-relaxed">
-    <p>Working firmly within the tradition of realism, Rustamadji devoted himself to observed truth — figures rendered with anatomical precision, landscapes built from patient layers of oil, and portraits that read like quiet biographies. He refused the shortcuts of stylisation; every brushstroke had to answer to nature.</p>
-    <p>His life and work are documented in the monograph <em>"Meniti Bumi, Rustamadji Klaten / Walking the Earth, Rustamadji Klaten"</em>, which traces his journey across Java and the friendships and apprenticeships that shaped his eye. The book remains the principal reference for scholars of his oeuvre.</p>
-    <p>Rustamadji raised two sons who became painters in their own right — Bodas Erlangga and Karang Sasongko — extending the family's commitment to disciplined, observation-led painting into a second generation.</p>
+  <div class="container" style="max-width:48rem;">
+    <div class="space-y-8 text-lg leading-relaxed" style="color:var(--umber-700);">
+      <p>Working firmly within the tradition of realism, Rustamadji devoted himself to observed truth — figures rendered with anatomical precision, landscapes built from patient layers of oil, and portraits that read like quiet biographies. He refused the shortcuts of stylisation; every brushstroke had to answer to nature.</p>
+      <p>His life and work are documented in the monograph <em>"Meniti Bumi, Rustamadji Klaten / Walking the Earth, Rustamadji Klaten"</em>, which traces his journey across Java and the friendships and apprenticeships that shaped his eye. The book remains the principal reference for scholars of his oeuvre.</p>
+      <p>Rustamadji raised two sons who became painters in their own right — Bodas Erlangga and Karang Sasongko — extending the family's commitment to disciplined, observation-led painting into a second generation.</p>
+    </div>
   </div>
 
-  <aside class="mx-auto max-w-3xl px-6 lg:px-10 mt-20">
-    <div class="border-l-2 border-ochre-500 pl-6 py-2">
+  <aside class="container mt-20" style="max-width:48rem;">
+    <div style="border-left:2px solid var(--ochre-500); padding:0.5rem 0 0.5rem 1.5rem;">
       <p class="eyebrow mb-3">Primary reference</p>
-      <p class="font-display italic text-xl text-umber-800 leading-snug">Meniti Bumi, Rustamadji Klaten / Walking the Earth, Rustamadji Klaten — family monograph</p>
+      <p class="font-display italic text-xl leading-snug" style="color:var(--umber-800);">Meniti Bumi, Rustamadji Klaten / Walking the Earth, Rustamadji Klaten — family monograph</p>
     </div>
   </aside>
 
-  <div class="mx-auto max-w-3xl px-6 lg:px-10 mt-32 text-center">
-    <p class="year-numeral text-7xl md:text-9xl text-umber-800/15">1921</p>
+  <div class="container mt-32 text-center" style="max-width:48rem;">
+    <p class="year-numeral text-8xl md:text-9xl" style="color:rgba(26,20,16,0.15);">1921</p>
     <p class="eyebrow mt-2">Year of birth</p>
   </div>
 </section>
 
-<!-- ═════════════════════════ GALLERY ═════════════════════════ -->
+<!-- ═══════════════ GALLERY ═══════════════ -->
 <section data-view-target="gallery" class="view py-16 lg:py-24 pb-32" aria-label="Gallery">
-  <div class="mx-auto max-w-7xl px-6 lg:px-10">
+  <div class="container">
     <p id="gallery-count" class="eyebrow mb-4"></p>
-    <h1 class="font-display text-4xl md:text-5xl lg:text-6xl text-umber-800 leading-[1.05] tracking-tight">The <em class="font-light italic">catalogue.</em></h1>
-    <p class="mt-6 text-umber-600 leading-relaxed max-w-2xl text-lg">A growing archive. Click any work for full details — medium, dimensions, year, and notes from the family record.</p>
+    <h1 class="font-display text-4xl md:text-5xl lg:text-6xl leading-tight" style="color:var(--umber-800); letter-spacing:-0.025em;">The <em class="font-light italic">catalogue.</em></h1>
+    <p class="mt-6 text-lg leading-relaxed" style="color:var(--umber-600); max-width:42rem;">A growing archive. Click any work for full details — medium, dimensions, year, and notes from the family record.</p>
     <div id="filters" class="mt-12 flex flex-wrap items-center gap-3"></div>
-    <div id="gallery-grid" class="mt-16 grid gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-3"></div>
+    <div id="gallery-grid" class="mt-16 grid sm:grid-cols-2 lg:grid-cols-3 gap-8" style="row-gap:4rem;"></div>
   </div>
 </section>
 
-<!-- ═════════════════════════ FAMILY OVERVIEW ═════════════════════════ -->
+<!-- ═══════════════ FAMILY ═══════════════ -->
 <section data-view-target="family" class="view py-16 lg:py-24 pb-32" aria-label="Family">
-  <div class="mx-auto max-w-7xl px-6 lg:px-10">
+  <div class="container">
     <p class="eyebrow mb-4">The second generation</p>
-    <h1 class="font-display text-4xl md:text-5xl lg:text-6xl text-umber-800 leading-[1.05] tracking-tight">Two sons, <em class="font-light italic">two voices,</em> one continuing line.</h1>
-    <p class="mt-6 text-umber-600 leading-relaxed max-w-2xl text-lg">Both Bodas Erlangga and Karang Sasongko followed their father into painting. Each has carried the family's realist discipline somewhere new — Bodas into atmosphere, Karang into form.</p>
-    <div id="family-grid" class="mt-20 grid gap-16 lg:grid-cols-2"></div>
+    <h1 class="font-display text-4xl md:text-5xl lg:text-6xl leading-tight" style="color:var(--umber-800); letter-spacing:-0.025em;">Two sons, <em class="font-light italic">two voices,</em> one continuing line.</h1>
+    <p class="mt-6 text-lg leading-relaxed" style="color:var(--umber-600); max-width:42rem;">Both Bodas Erlangga and Karang Sasongko followed their father into painting. Each has carried the family's realist discipline somewhere new — Bodas into atmosphere, Karang into form.</p>
+    <div id="family-grid" class="mt-20 grid lg:grid-cols-2 gap-16"></div>
   </div>
 </section>
 
-<!-- ═════════════════════════ ARTIST PROFILE (dynamic) ═════════════════════════ -->
+<!-- ═══════════════ ARTIST PROFILE (dynamic) ═══════════════ -->
 <section data-view-target="artist" class="view pt-12 lg:pt-20 pb-32" aria-label="Artist profile">
-  <div class="mx-auto max-w-7xl px-6 lg:px-10 mb-10">
-    <a href="#" data-view="family" class="inline-flex items-center gap-2 text-xs tracking-widest uppercase text-umber-500 hover:text-umber-800 transition-colors">
-      <i data-lucide="arrow-left" class="w-3 h-3" aria-hidden="true"></i> All family painters
-    </a>
+  <div class="container mb-10">
+    <a href="#" data-view="family" class="btn-link"><svg class="icon icon-sm"><use href="#i-arrow-left"/></svg> All family painters</a>
   </div>
   <div id="artist-profile"></div>
 </section>
 
-<!-- ═════════════════════════ ARTWORK DETAIL (dynamic) ═════════════════════════ -->
+<!-- ═══════════════ ARTWORK DETAIL (dynamic) ═══════════════ -->
 <section data-view-target="artwork" class="view pt-12 pb-32" aria-label="Artwork detail">
-  <div class="mx-auto max-w-7xl px-6 lg:px-10 mb-10">
-    <a href="#" data-view="gallery" class="inline-flex items-center gap-2 text-xs tracking-widest uppercase text-umber-500 hover:text-umber-800 transition-colors">
-      <i data-lucide="arrow-left" class="w-3 h-3" aria-hidden="true"></i> Back to gallery
-    </a>
+  <div class="container mb-10">
+    <a href="#" data-view="gallery" class="btn-link"><svg class="icon icon-sm"><use href="#i-arrow-left"/></svg> Back to gallery</a>
   </div>
   <div id="artwork-detail"></div>
 </section>
 
-<!-- ═════════════════════════ CONTACT ═════════════════════════ -->
+<!-- ═══════════════ CONTACT ═══════════════ -->
 <section data-view-target="contact" class="view py-16 lg:py-24 pb-32" aria-label="Contact">
-  <div class="mx-auto max-w-6xl px-6 lg:px-10">
+  <div class="container" style="max-width:72rem;">
     <p class="eyebrow mb-6">Get in touch</p>
-    <h1 class="font-display text-5xl md:text-7xl lg:text-8xl text-umber-800 leading-[0.95] tracking-tight max-w-3xl">We'd be <em class="font-light italic">delighted</em> to hear from you.</h1>
-    <p class="mt-8 max-w-xl text-umber-600 text-lg leading-relaxed">
+    <h1 class="font-display text-5xl md:text-7xl lg:text-8xl leading-tight" style="color:var(--umber-800); letter-spacing:-0.025em; line-height:0.95; max-width:48rem;">We'd be <em class="font-light italic">delighted</em> to hear from you.</h1>
+    <p class="mt-8 text-lg leading-relaxed" style="color:var(--umber-600); max-width:36rem;">
       For inquiries about archive access, exhibition loans, prints, or scholarship — reach the family office through any of the channels below, or send a note here.
     </p>
     <div class="mt-20 grid lg:grid-cols-2 gap-16">
       <ul class="space-y-6">
-        <li><a id="row-wa" href="#" target="_blank" rel="noopener noreferrer" class="contact-row group flex items-start gap-5">
-          <span class="grid place-items-center w-12 h-12 rounded-full bg-ochre-500/15 text-ochre-600 group-hover:bg-ochre-500/25 transition-colors"><i data-lucide="message-circle" class="w-4 h-4" aria-hidden="true"></i></span>
-          <span><span class="eyebrow block">WhatsApp</span><span class="font-display text-2xl text-umber-800 mt-1 block">Open conversation</span></span>
+        <li><a id="row-wa" href="#" target="_blank" rel="noopener noreferrer" class="contact-row">
+          <span class="contact-icon"><svg class="icon"><use href="#i-chat"/></svg></span>
+          <span class="contact-row-text"><span class="label">WhatsApp</span><span class="value">Open conversation</span></span>
         </a></li>
-        <li><a id="row-phone" href="#" class="contact-row group flex items-start gap-5">
-          <span class="grid place-items-center w-12 h-12 rounded-full bg-ochre-500/15 text-ochre-600 group-hover:bg-ochre-500/25 transition-colors"><i data-lucide="phone" class="w-4 h-4" aria-hidden="true"></i></span>
-          <span><span class="eyebrow block">Telephone</span><span id="phone-val" class="font-display text-2xl text-umber-800 mt-1 block"></span></span>
+        <li><a id="row-phone" href="#" class="contact-row">
+          <span class="contact-icon"><svg class="icon"><use href="#i-phone"/></svg></span>
+          <span class="contact-row-text"><span class="label">Telephone</span><span id="phone-val" class="value"></span></span>
         </a></li>
-        <li><a id="row-email" href="#" class="contact-row group flex items-start gap-5">
-          <span class="grid place-items-center w-12 h-12 rounded-full bg-ochre-500/15 text-ochre-600 group-hover:bg-ochre-500/25 transition-colors"><i data-lucide="mail" class="w-4 h-4" aria-hidden="true"></i></span>
-          <span><span class="eyebrow block">Email</span><span id="email-val" class="font-display text-2xl text-umber-800 mt-1 block break-all"></span></span>
+        <li><a id="row-email" href="#" class="contact-row">
+          <span class="contact-icon"><svg class="icon"><use href="#i-mail"/></svg></span>
+          <span class="contact-row-text"><span class="label">Email</span><span id="email-val" class="value break-all"></span></span>
         </a></li>
-        <li><div class="flex items-start gap-5">
-          <span class="grid place-items-center w-12 h-12 rounded-full bg-ochre-500/15 text-ochre-600"><i data-lucide="map-pin" class="w-4 h-4" aria-hidden="true"></i></span>
-          <span><span class="eyebrow block">Studio</span><span class="font-display text-2xl text-umber-800 mt-1 block">Klaten, Central Java, Indonesia</span></span>
+        <li><div class="contact-row" style="cursor:default;">
+          <span class="contact-icon"><svg class="icon"><use href="#i-pin"/></svg></span>
+          <span class="contact-row-text"><span class="label">Studio</span><span class="value">Klaten, Central Java, Indonesia</span></span>
         </div></li>
       </ul>
 
       <form id="contact-form" class="space-y-5" novalidate autocomplete="on">
         <div>
-          <label class="eyebrow block mb-1" for="cf-name">Your name <span class="text-ochre-600" aria-hidden="true">*</span></label>
-          <input id="cf-name" name="name" required maxlength="100" autocomplete="name" class="w-full bg-transparent border-b border-umber-800/20 focus:border-ochre-500 outline-none py-3 text-umber-800 transition-colors" />
+          <label class="eyebrow form-label" for="cf-name">Your name <span style="color:var(--ochre-600)" aria-hidden="true">*</span></label>
+          <input id="cf-name" name="name" required maxlength="100" autocomplete="name" class="form-field" />
         </div>
         <div>
-          <label class="eyebrow block mb-1" for="cf-email">Email <span class="text-ochre-600" aria-hidden="true">*</span></label>
-          <input id="cf-email" name="email" type="email" required maxlength="254" autocomplete="email" class="w-full bg-transparent border-b border-umber-800/20 focus:border-ochre-500 outline-none py-3 text-umber-800 transition-colors" />
+          <label class="eyebrow form-label" for="cf-email">Email <span style="color:var(--ochre-600)" aria-hidden="true">*</span></label>
+          <input id="cf-email" name="email" type="email" required maxlength="254" autocomplete="email" class="form-field" />
         </div>
         <div>
-          <label class="eyebrow block mb-1" for="cf-subject">Subject <span class="text-ochre-600" aria-hidden="true">*</span></label>
-          <input id="cf-subject" name="subject" required maxlength="200" class="w-full bg-transparent border-b border-umber-800/20 focus:border-ochre-500 outline-none py-3 text-umber-800 transition-colors" />
+          <label class="eyebrow form-label" for="cf-subject">Subject <span style="color:var(--ochre-600)" aria-hidden="true">*</span></label>
+          <input id="cf-subject" name="subject" required maxlength="200" class="form-field" />
         </div>
         <div>
-          <label class="eyebrow block mb-1" for="cf-message">Message <span class="text-ochre-600" aria-hidden="true">*</span></label>
-          <textarea id="cf-message" name="message" required maxlength="5000" rows="4" class="w-full bg-transparent border-b border-umber-800/20 focus:border-ochre-500 outline-none py-3 text-umber-800 transition-colors resize-none"></textarea>
+          <label class="eyebrow form-label" for="cf-message">Message <span style="color:var(--ochre-600)" aria-hidden="true">*</span></label>
+          <textarea id="cf-message" name="message" required maxlength="5000" rows="4" class="form-field resize-none"></textarea>
         </div>
-        <p id="cf-error" class="text-sm text-red-700 italic min-h-[1.25rem]" role="alert" aria-live="polite"></p>
-        <button type="submit" class="w-full bg-umber-800 text-parchment-100 px-7 py-4 rounded-full text-sm tracking-wide hover:bg-umber-700 transition-colors">Send via email client</button>
-        <p class="text-xs text-umber-500 italic">Submitting opens your email client with the message prefilled — no server required for the static build.</p>
+        <p id="cf-error" class="form-error" role="alert" aria-live="polite"></p>
+        <button type="submit" class="btn-primary" style="width:100%; justify-content:center;">Send via email client</button>
+        <p class="text-xs italic" style="color:var(--umber-500);">Submitting opens your email client with the message prefilled — no server required for the static build.</p>
       </form>
     </div>
   </div>
@@ -339,68 +303,67 @@
 
 </main>
 
-<!-- ═════════════════════════ FOOTER ═════════════════════════ -->
-<footer class="relative z-10 mt-32 border-t border-umber-800/10 bg-parchment-50/60">
-  <div class="mx-auto max-w-7xl px-6 lg:px-10 py-16 grid gap-12 lg:grid-cols-4">
-    <div class="lg:col-span-2 space-y-4">
-      <p class="eyebrow">An archive of Indonesian realism</p>
-      <h2 class="font-display text-3xl lg:text-4xl text-umber-800 leading-tight max-w-md">Three painters. <em class="font-light">One family.</em> A century of Java observed.</h2>
-    </div>
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="footer">
+  <div class="footer-grid">
     <div>
-      <p class="eyebrow mb-4">Explore</p>
-      <ul class="space-y-2 text-sm text-umber-600">
-        <li><a href="#" data-view="home" class="hover:text-umber-800">Home</a></li>
-        <li><a href="#" data-view="biography" class="hover:text-umber-800">Biography</a></li>
-        <li><a href="#" data-view="gallery" class="hover:text-umber-800">Gallery</a></li>
-        <li><a href="#" data-view="family" class="hover:text-umber-800">Family</a></li>
-        <li><a href="#" data-view="contact" class="hover:text-umber-800">Contact</a></li>
+      <p class="eyebrow mb-4">An archive of Indonesian realism</p>
+      <h2 class="footer-headline">Three painters. <em>One family.</em> A century of Java observed.</h2>
+    </div>
+    <div class="footer-section">
+      <h4>Explore</h4>
+      <ul>
+        <li><a href="#" data-view="home">Home</a></li>
+        <li><a href="#" data-view="biography">Biography</a></li>
+        <li><a href="#" data-view="gallery">Gallery</a></li>
+        <li><a href="#" data-view="family">Family</a></li>
+        <li><a href="#" data-view="contact">Contact</a></li>
       </ul>
     </div>
-    <div>
-      <p class="eyebrow mb-4">Contact</p>
-      <ul class="space-y-2 text-sm text-umber-600">
-        <li><a id="footer-phone" href="#" class="hover:text-umber-800"></a></li>
-        <li><a id="footer-email" href="#" class="hover:text-umber-800"></a></li>
+    <div class="footer-section">
+      <h4>Contact</h4>
+      <ul>
+        <li><a id="footer-phone" href="#"></a></li>
+        <li><a id="footer-email" href="#"></a></li>
       </ul>
     </div>
   </div>
-  <div class="border-t border-umber-800/10">
-    <div class="mx-auto max-w-7xl px-6 lg:px-10 py-6 flex flex-wrap items-center justify-between gap-4">
+  <div class="footer-bottom">
+    <div class="footer-bottom-inner">
       <p class="eyebrow">© <span id="year"></span> Rustamadji Family Archive</p>
       <p class="eyebrow">Klaten · Central Java · Indonesia</p>
     </div>
   </div>
 </footer>
 
-<!-- ═════════════════════════ CHAT WIDGET ═════════════════════════ -->
-<div class="fixed bottom-6 right-6 z-50">
-  <div id="chat-panel" class="hidden mb-3 w-[300px] rounded-2xl bg-parchment-50 border border-umber-800/15 shadow-[0_24px_60px_-20px_rgba(58,42,31,0.45)] overflow-hidden" role="dialog" aria-label="Contact channels">
-    <div class="bg-umber-800 text-parchment-100 px-5 py-4">
-      <p class="eyebrow !text-parchment-200/70">Get in touch</p>
-      <h3 class="font-display text-xl">How may we help?</h3>
-      <p class="text-xs text-parchment-200/70 mt-1">Inquiries about archive access, prints, and exhibitions.</p>
+<!-- ═══════════════ CHAT WIDGET ═══════════════ -->
+<div class="chat-widget">
+  <div id="chat-panel" class="chat-panel" role="dialog" aria-label="Contact channels">
+    <div class="chat-panel-header">
+      <p class="eyebrow">Get in touch</p>
+      <h3>How may we help?</h3>
+      <p>Inquiries about archive access, prints, and exhibitions.</p>
     </div>
-    <ul class="divide-y divide-umber-800/10">
-      <li><a id="cw-wa" target="_blank" rel="noopener noreferrer" class="flex items-center gap-4 px-5 py-4 hover:bg-parchment-100 transition-colors group cursor-pointer">
-        <span class="grid place-items-center w-10 h-10 rounded-full bg-ochre-500/15 text-ochre-600 group-hover:bg-ochre-500/25"><i data-lucide="message-circle" class="w-4 h-4" aria-hidden="true"></i></span>
-        <span><span class="block text-sm font-medium text-umber-800">WhatsApp</span><span class="block text-xs text-umber-500">Usually replies within a day</span></span>
+    <ul>
+      <li><a id="cw-wa" target="_blank" rel="noopener noreferrer" class="chat-row">
+        <span class="chat-icon"><svg class="icon"><use href="#i-chat"/></svg></span>
+        <span class="chat-row-text"><span class="primary">WhatsApp</span><span class="secondary">Usually replies within a day</span></span>
       </a></li>
-      <li><a id="cw-phone" class="flex items-center gap-4 px-5 py-4 hover:bg-parchment-100 transition-colors group cursor-pointer">
-        <span class="grid place-items-center w-10 h-10 rounded-full bg-ochre-500/15 text-ochre-600 group-hover:bg-ochre-500/25"><i data-lucide="phone" class="w-4 h-4" aria-hidden="true"></i></span>
-        <span><span id="cw-phone-val" class="block text-sm font-medium text-umber-800"></span><span class="block text-xs text-umber-500">Call the archive office</span></span>
+      <li><a id="cw-phone" class="chat-row">
+        <span class="chat-icon"><svg class="icon"><use href="#i-phone"/></svg></span>
+        <span class="chat-row-text"><span id="cw-phone-val" class="primary"></span><span class="secondary">Call the archive office</span></span>
       </a></li>
-      <li><a id="cw-email" class="flex items-center gap-4 px-5 py-4 hover:bg-parchment-100 transition-colors group cursor-pointer">
-        <span class="grid place-items-center w-10 h-10 rounded-full bg-ochre-500/15 text-ochre-600 group-hover:bg-ochre-500/25"><i data-lucide="mail" class="w-4 h-4" aria-hidden="true"></i></span>
-        <span><span id="cw-email-val" class="block text-sm font-medium text-umber-800 break-all"></span><span class="block text-xs text-umber-500">For detailed inquiries</span></span>
+      <li><a id="cw-email" class="chat-row">
+        <span class="chat-icon"><svg class="icon"><use href="#i-mail"/></svg></span>
+        <span class="chat-row-text"><span id="cw-email-val" class="primary break-all"></span><span class="secondary">For detailed inquiries</span></span>
       </a></li>
     </ul>
   </div>
-  <button id="chat-toggle" type="button" aria-label="Open contact menu" class="grid place-items-center w-14 h-14 rounded-full bg-umber-800 text-parchment-100 shadow-[0_16px_40px_-12px_rgba(58,42,31,0.6)] hover:scale-105 active:scale-95 transition-transform">
-    <i data-lucide="message-circle" class="w-5 h-5" aria-hidden="true"></i>
+  <button id="chat-toggle" type="button" aria-label="Open contact menu" class="chat-toggle">
+    <svg class="icon icon-lg"><use href="#i-chat"/></svg>
   </button>
 </div>
 
-<!-- Application logic (separated for CSP + caching) -->
 <script src="app.js" defer></script>
 
 </body>
