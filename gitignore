@@ -1,9 +1,8 @@
 # ============================================================================
 # Rustamadji Gallery — .gitignore
-# Static site with no build process — minimal ignores needed
 # ============================================================================
 
-# ─── Operating System ───────────────────────────────────────────────────────
+# OS files
 .DS_Store
 .DS_Store?
 ._*
@@ -13,53 +12,38 @@ ehthumbs.db
 Thumbs.db
 Desktop.ini
 
-# ─── Editors & IDEs ─────────────────────────────────────────────────────────
-# VSCode
+# Editors
 .vscode/
-*.code-workspace
-
-# JetBrains (WebStorm, IntelliJ)
 .idea/
 *.iml
-*.iws
-
-# Sublime Text
+*.code-workspace
 *.sublime-project
 *.sublime-workspace
-
-# Vim
 *.swp
 *.swo
 *~
 
-# Emacs
-*~
-\#*\#
-.\#*
-
-# ─── Environment & Config ───────────────────────────────────────────────────
+# Environment & secrets
 .env
-.env.local
-.env.*.local
+.env.*
+*.pem
+*.key
 
-# ─── Logs ───────────────────────────────────────────────────────────────────
+# Logs
 *.log
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
-# ─── Temporary Files ────────────────────────────────────────────────────────
+# Temp / cache
 *.tmp
 *.temp
 .cache/
 
-# ─── Archives (if you're packaging releases) ────────────────────────────────
+# Archives
 *.zip
 *.tar.gz
 *.rar
 
-# ─── Original Source Images (optional) ──────────────────────────────────────
-# Uncomment if you keep high-res originals separate from web-optimized versions
+# High-res source images (optional — keep originals out of repo)
+# Uncomment to ignore a local "originals/" folder of unprocessed scans
 # originals/
-# sources/
-# raw/
+# raw-scans/
