@@ -9,28 +9,28 @@
   --color-parchment-200: #ebe1cd;
   --color-parchment-300: #dcc9a6;
   --color-parchment-400: #c9aa7a;
-  
+
   --color-umber-400: #7a5d44;
   --color-umber-500: #5a4231;
   --color-umber-600: #3f2e22;
   --color-umber-700: #2c2017;
   --color-umber-800: #1a1410;
   --color-umber-900: #0e0a08;
-  
+
   --color-ochre-400: #d4a64a;
   --color-ochre-500: #b8924a;
   --color-ochre-600: #947334;
-  
+
   --color-dusk-400: #8a7d8e;
   --color-dusk-500: #6b5d6f;
-  
+
   --font-display: 'Cormorant Garamond', Georgia, serif;
   --font-body:    'Inter', system-ui, sans-serif;
   --font-mono:    'JetBrains Mono', monospace;
 }
 
-html { 
-  scroll-behavior: smooth; 
+html {
+  scroll-behavior: smooth;
 }
 
 body {
@@ -110,6 +110,24 @@ body::before {
   border-radius: 2px;
 }
 
+/* Skip link for keyboard accessibility */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 1rem;
+  background: var(--color-umber-800);
+  color: var(--color-parchment-100);
+  padding: 0.5rem 1rem;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  z-index: 100;
+  transition: top 0.2s;
+}
+.skip-link:focus {
+  top: 1rem;
+}
+
 /* ───────────────────────────────────────────────────────────
    Page-transition animations
    ─────────────────────────────────────────────────────────── */
@@ -143,6 +161,15 @@ body::before {
 .stagger > *:nth-child(4) { animation-delay: 0.35s; }
 .stagger > *:nth-child(5) { animation-delay: 0.45s; }
 .stagger > *:nth-child(6) { animation-delay: 0.55s; }
+
+/* Respect user motion preferences (WCAG / accessibility) */
+@media (prefers-reduced-motion: reduce) {
+  .view, .stagger > *, .art-frame > * {
+    animation: none !important;
+    transition: none !important;
+  }
+  html { scroll-behavior: auto; }
+}
 
 /* ───────────────────────────────────────────────────────────
    Artwork card hover effect
