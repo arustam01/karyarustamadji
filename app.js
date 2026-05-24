@@ -48,9 +48,9 @@
   // ─── CONFIG ──────────────────────────────────────────────────
 
   var CONFIG = {
-    phone:    '+62-812-3456-7890',
+    phone:    '+62816-4264-397',
     email:    'archive@rustamadji.id',
-    whatsapp: '6281234567890'
+    whatsapp: '628164264397'
   };
 
   var PORTRAIT = 'images/rustamadji-portrait.png';
