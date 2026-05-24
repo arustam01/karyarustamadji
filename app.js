@@ -1,27 +1,18 @@
 /* =============================================================
    Rustamadji Gallery — Application Logic
-   
-   Security features (OWASP Top 10 / SANS CWE Top 25):
-   • CWE-79  (XSS): All dynamic content escaped via escapeHTML()
-   • CWE-20  (Input Validation): Contact form validated client-side
-   • CWE-22  (Path Traversal): Image paths validated against allowlist
-   • CWE-94  (Code Injection): No eval(), no Function() constructor
-   • CWE-918 (SSRF): All external links use rel="noopener noreferrer"
-   • CWE-1021 (Clickjacking): CSP frame-ancestors set in HTML
+   Security: OWASP Top 10 / SANS CWE Top 25 compliant
+     • CWE-79  (XSS):     escapeHTML/escapeAttr on all dynamic content
+     • CWE-20  (Input):   email regex, length limits, CRLF rejection
+     • CWE-22  (Path):    safeImagePath allowlist
+     • CWE-94  (Code):    no eval(), no Function() constructor
+     • CWE-1022 (Tabnabbing): rel="noopener noreferrer" on external links
    ============================================================= */
 
 'use strict';
 
 (function () {
-  // ─────────────────────────────────────────────────────────────
-  // SECURITY UTILITIES
-  // ─────────────────────────────────────────────────────────────
+  // ─── SECURITY UTILITIES ──────────────────────────────────────
 
-  /**
-   * Escape HTML to prevent XSS injection in template strings.
-   * MUST be used for ANY value interpolated into innerHTML.
-   * @see CWE-79 Cross-Site Scripting
-   */
   function escapeHTML(unsafe) {
     if (unsafe === null || unsafe === undefined) return '';
     return String(unsafe)
@@ -32,49 +23,29 @@
       .replace(/'/g, '&#039;');
   }
 
-  /**
-   * Escape values used inside HTML attributes (extra defensive).
-   */
   function escapeAttr(unsafe) {
     return escapeHTML(unsafe).replace(/`/g, '&#96;');
   }
 
-  /**
-   * Validate image paths against an allowlist of safe patterns.
-   * Prevents path traversal and protocol injection.
-   * @see CWE-22 Path Traversal
-   */
   function safeImagePath(path) {
     if (typeof path !== 'string') return '';
-    // Allow only: relative paths (images/...) or data: URIs we control
     var isRelativeImage = /^images\/[a-zA-Z0-9_\-]+\.(png|jpg|jpeg|webp|svg)$/.test(path);
     var isDataUri = /^data:image\/(png|jpeg|jpg|svg\+xml);base64,[A-Za-z0-9+\/=]+$/.test(path);
     var isSvgDataUri = path.indexOf('data:image/svg+xml;utf8,') === 0;
-    if (isRelativeImage || isDataUri || isSvgDataUri) return path;
-    return ''; // Reject anything else (http://, javascript:, file://, etc.)
+    return (isRelativeImage || isDataUri || isSvgDataUri) ? path : '';
   }
 
-  /**
-   * Validate slug format — alphanumeric and hyphens only.
-   * Used for routing keys; prevents injection via URL/data.
-   */
   function safeSlug(slug) {
     if (typeof slug !== 'string') return '';
     return /^[a-z0-9\-]{1,80}$/.test(slug) ? slug : '';
   }
 
-  /**
-   * RFC 5322-lite email validation (defense in depth on top of HTML5).
-   * @see CWE-20 Improper Input Validation
-   */
   function isValidEmail(email) {
     if (typeof email !== 'string' || email.length > 254) return false;
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // CONFIGURATION
-  // ─────────────────────────────────────────────────────────────
+  // ─── CONFIG ──────────────────────────────────────────────────
 
   var CONFIG = {
     phone:    '+62-812-3456-7890',
@@ -84,9 +55,7 @@
 
   var PORTRAIT = 'images/rustamadji-portrait.png';
 
-  // ─────────────────────────────────────────────────────────────
-  // DATA
-  // ─────────────────────────────────────────────────────────────
+  // ─── DATA ────────────────────────────────────────────────────
 
   var ARTISTS = [
     {
@@ -139,137 +108,81 @@
     }
   ];
 
-  // Eleven authenticated works by Rustamadji, drawn from the family archive.
-  // All measurements in centimetres. All works oil on canvas.
   var ARTWORKS = [
     {
-      slug: 'kaliurang',
-      title: 'Kaliurang',
-      artist: 'rustamadji',
-      year: 1982,
-      medium: 'Oil on canvas',
-      dimensions: '142 cm \u00d7 215.5 cm',
-      featured: true,
+      slug: 'kaliurang', title: 'Kaliurang', artist: 'rustamadji', year: 1982,
+      medium: 'Oil on canvas', dimensions: '142 cm \u00d7 215.5 cm', featured: true,
       img: 'images/kaliurang.png',
       description: "A monumental portrait of Mount Merapi viewed from the resort village of Kaliurang on its southern slopes. The volcano\u2019s scarred, weathered flanks are rendered with extraordinary geological precision, framed by the silhouetted trunks of trees clinging to the foothills. At over two metres wide, this is one of Rustamadji\u2019s most ambitious landscapes \u2014 a direct confrontation with the mountain that defined his region, his climate, and his life\u2019s work."
     },
     {
-      slug: 'kemarau',
-      title: 'Kemarau',
-      artist: 'rustamadji',
-      year: 1995,
-      medium: 'Oil on canvas',
-      dimensions: '110 cm \u00d7 155 cm',
-      featured: true,
+      slug: 'kemarau', title: 'Kemarau', artist: 'rustamadji', year: 1995,
+      medium: 'Oil on canvas', dimensions: '110 cm \u00d7 155 cm', featured: true,
       img: 'images/kemarau.png',
       description: "Kemarau \u2014 the dry season \u2014 transforms the foothills of Central Java into a study in ochre, dust, and patient endurance. Rustamadji renders the cracked earth and bleached fields with documentary honesty, while in the distance the blue ridge of mountains holds the promise of returning rain. A meditation on waiting; a portrait of Java\u2019s other half, often unseen in the postcards."
     },
     {
-      slug: 'mengolah-tanah',
-      title: 'Mengolah Tanah',
-      artist: 'rustamadji',
-      year: 1984,
-      medium: 'Oil on canvas',
-      dimensions: '108 cm \u00d7 143 cm',
-      featured: true,
+      slug: 'mengolah-tanah', title: 'Mengolah Tanah', artist: 'rustamadji', year: 1984,
+      medium: 'Oil on canvas', dimensions: '108 cm \u00d7 143 cm', featured: true,
       img: 'images/mengolah-tanah.png',
       description: "Mengolah Tanah \u2014 Tilling the Earth \u2014 shows a farmer driving his pair of water buffalo through flooded paddy in the early light. Rustamadji\u2019s draughtsmanship is at its most assured here: the muscular tension of the animals, the farmer\u2019s grounded stance, the precise reflections splintered across the water. A working portrait of the daily labour that built Java\u2019s rice civilisation \u2014 observed without sentiment and rendered with dignity."
     },
     {
-      slug: 'rembang-tebu',
-      title: 'Rembang Tebu',
-      artist: 'rustamadji',
-      year: 1987,
-      medium: 'Oil on canvas',
-      dimensions: '140 cm \u00d7 200 cm',
-      featured: true,
+      slug: 'rembang-tebu', title: 'Rembang Tebu', artist: 'rustamadji', year: 1987,
+      medium: 'Oil on canvas', dimensions: '140 cm \u00d7 200 cm', featured: true,
       img: 'images/rembang-tebu.png',
       description: "Sugar cane harvest in Rembang \u2014 Rustamadji\u2019s most ambitious figural composition, populating a two-metre canvas with the entire choreography of harvest labour. Workers shoulder bundled cane, children watch from the margins, cattle haul the load, and the railway tracks of colonial-era plantation infrastructure cut across the foreground. A culminating achievement of the painter\u2019s lifelong commitment to observing his people at their work."
     },
     {
-      slug: 'candi-prambanan',
-      title: 'Candi Prambanan',
-      artist: 'rustamadji',
-      year: 1988,
-      medium: 'Oil on canvas',
-      dimensions: '170 cm \u00d7 150 cm',
-      featured: true,
+      slug: 'candi-prambanan', title: 'Candi Prambanan', artist: 'rustamadji', year: 1988,
+      medium: 'Oil on canvas', dimensions: '170 cm \u00d7 150 cm', featured: true,
       img: 'images/candi-prambanan.png',
       description: "The monumental Prambanan temple complex rises against a vast Javanese sky, its intricate stone latticework rendered with archaeological precision. Painted at the height of Rustamadji\u2019s mature period, this large-format canvas reframes a national heritage site as a study in scale, devotion, and the weight of centuries. The figures drifting across the foreground \u2014 small, anonymous, alive \u2014 establish the temple\u2019s overwhelming verticality."
     },
     {
-      slug: 'prambanan-pepohonan',
-      title: 'Prambanan dari Balik Pepohonan',
-      artist: 'rustamadji',
-      year: 1983,
-      medium: 'Oil on canvas',
-      dimensions: '110.5 cm \u00d7 155 cm',
-      featured: true,
+      slug: 'prambanan-pepohonan', title: 'Prambanan dari Balik Pepohonan', artist: 'rustamadji', year: 1983,
+      medium: 'Oil on canvas', dimensions: '110.5 cm \u00d7 155 cm', featured: true,
       img: 'images/prambanan-pepohonan.png',
       description: "Prambanan glimpsed through the trees \u2014 the temple half-veiled by tropical canopy, with a farmer driving his buffalo across the foreground and ducks settling in a roadside pool. Rustamadji here treats heritage as living landscape: not the official postcard view, but the temple as it appears to those who live alongside it. The framing trees, painted with extraordinary textural fidelity, give the composition its quiet authority."
     },
     {
-      slug: 'desa-deles',
-      title: 'Desa Deles',
-      artist: 'rustamadji',
-      year: 1983,
-      medium: 'Oil on canvas',
-      dimensions: '154 cm \u00d7 110 cm',
+      slug: 'desa-deles', title: 'Desa Deles', artist: 'rustamadji', year: 1983,
+      medium: 'Oil on canvas', dimensions: '154 cm \u00d7 110 cm',
       img: 'images/desa-deles.png',
       description: "The conical silhouette of Mount Merapi presides over the village of Deles, framed in the foreground by the emerald foliage of Java\u2019s mid-altitude forests. A masterclass in atmospheric perspective: Rustamadji builds the mountain from delicate, accumulated glazes, achieving the soft volumetric mass that only patient observation can yield. The painting reads as both portrait and pilgrimage \u2014 Merapi as the family\u2019s lifelong companion."
     },
     {
-      slug: 'baturraden',
-      title: 'Baturraden',
-      artist: 'rustamadji',
-      year: 1987,
-      medium: 'Oil on canvas',
-      dimensions: '96 cm \u00d7 140 cm',
+      slug: 'baturraden', title: 'Baturraden', artist: 'rustamadji', year: 1987,
+      medium: 'Oil on canvas', dimensions: '96 cm \u00d7 140 cm',
       img: 'images/baturraden.png',
       description: "A cascading waterfall in the Baturraden highlands of Central Java tumbles over moss-covered boulders into a shallow pool strewn with worn river stones. Rustamadji\u2019s brush captures the interplay of light, water, and stone with extraordinary fidelity \u2014 each rock is rendered with the patience of an observed witness, while the surrounding rainforest dissolves into atmospheric depth. A meditation on the persistence of water and the geology of waiting."
     },
     {
-      slug: 'hutan-baturraden',
-      title: 'Hutan Baturraden',
-      artist: 'rustamadji',
-      year: 1987,
-      medium: 'Oil on canvas',
-      dimensions: '140 cm \u00d7 98 cm',
+      slug: 'hutan-baturraden', title: 'Hutan Baturraden', artist: 'rustamadji', year: 1987,
+      medium: 'Oil on canvas', dimensions: '140 cm \u00d7 98 cm',
       img: 'images/hutan-baturraden.png',
       description: "A mountain stream threads its way down the forested slopes of Baturraden, the water catching the filtered light that penetrates the canopy above. Rustamadji\u2019s restrained palette \u2014 deep greens, slate greys, the warm browns of wet stone \u2014 captures the particular twilight quality of Java\u2019s high forests. The vertical composition leads the eye upward along the water\u2019s path, inviting the slow looking the subject demands."
     },
     {
-      slug: 'hutan-wonogiri',
-      title: 'Hutan di Wonogiri',
-      artist: 'rustamadji',
-      year: 1996,
-      medium: 'Oil on canvas',
-      dimensions: '98 cm \u00d7 140 cm',
+      slug: 'hutan-wonogiri', title: 'Hutan di Wonogiri', artist: 'rustamadji', year: 1996,
+      medium: 'Oil on canvas', dimensions: '98 cm \u00d7 140 cm',
       img: 'images/hutan-wonogiri.png',
       description: "Late afternoon light pours through the trunks of a Wonogiri forest, illuminating one luminous tree as if from within. Painted in the painter\u2019s later years, this work deploys a remarkably reduced palette \u2014 mauves, soft yellows, the rust of fallen leaves \u2014 to convey the cathedral hush of mature woodland. A study in how light, given time and attention, becomes substance."
     },
     {
-      slug: 'kali',
-      title: 'Kali',
-      artist: 'rustamadji',
-      year: 1974,
-      medium: 'Oil on canvas',
-      dimensions: '98 cm \u00d7 140 cm',
+      slug: 'kali', title: 'Kali', artist: 'rustamadji', year: 1974,
+      medium: 'Oil on canvas', dimensions: '98 cm \u00d7 140 cm',
       img: 'images/kali.png',
       description: "Among Rustamadji\u2019s earliest mature landscapes, this study of a Javanese river bend captures the particular density of tropical foliage at the close of day. A single shaft of light illuminating the central thicket transforms an ordinary stream into an almost devotional image. The work anticipates the atmospheric vocabulary the painter would refine across the following two decades."
     }
   ];
 
-  // ─────────────────────────────────────────────────────────────
-  // DATA HELPERS
-  // ─────────────────────────────────────────────────────────────
+  // ─── DATA HELPERS ────────────────────────────────────────────
 
   function artistBySlug(s) {
     var safe = safeSlug(s);
     if (!safe) return null;
-    for (var i = 0; i < ARTISTS.length; i++) {
-      if (ARTISTS[i].slug === safe) return ARTISTS[i];
-    }
+    for (var i = 0; i < ARTISTS.length; i++) if (ARTISTS[i].slug === safe) return ARTISTS[i];
     return null;
   }
 
@@ -282,13 +195,10 @@
   function artworkBySlug(s) {
     var safe = safeSlug(s);
     if (!safe) return null;
-    for (var i = 0; i < ARTWORKS.length; i++) {
-      if (ARTWORKS[i].slug === safe) return ARTWORKS[i];
-    }
+    for (var i = 0; i < ARTWORKS.length; i++) if (ARTWORKS[i].slug === safe) return ARTWORKS[i];
     return null;
   }
 
-  /** Build a parchment-tinted SVG placeholder. */
   function plaqueSvg(opts) {
     var title = String(opts.title || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     var year = String(opts.year || '');
@@ -300,11 +210,8 @@
       "<stop offset='0%' stop-color='#f5efe4'/>" +
       "<stop offset='60%' stop-color='" + color + "' stop-opacity='0.12'/>" +
       "<stop offset='100%' stop-color='" + color + "' stop-opacity='0.28'/>" +
-      "</linearGradient><pattern id='grain' patternUnits='userSpaceOnUse' width='3' height='3'>" +
-      "<circle cx='1' cy='1' r='0.5' fill='" + color + "' fill-opacity='0.18'/>" +
-      "</pattern></defs>" +
+      "</linearGradient></defs>" +
       "<rect width='100%' height='100%' fill='url(#g)'/>" +
-      "<rect width='100%' height='100%' fill='url(#grain)'/>" +
       "<g font-family='Cormorant Garamond, Georgia, serif' text-anchor='middle' fill='" + color + "'>" +
       "<text x='50%' y='46%' font-size='46' font-style='italic'>" + title + "</text>" +
       "<text x='50%' y='54%' font-size='28' opacity='0.55' font-style='italic'>" + year + "</text>" +
@@ -314,38 +221,27 @@
 
   function artworkImage(a) {
     var validated = safeImagePath(a.img);
-    if (validated) return validated;
-    return plaqueSvg({ title: a.title, year: a.year, color: a.color });
+    return validated || plaqueSvg({ title: a.title, year: a.year, color: a.color });
   }
 
   function artistImage(p) {
     var validated = safeImagePath(p.portrait);
-    if (validated) return validated;
-    return plaqueSvg({ title: p.name, year: '', color: p.color, w: 900, h: 1200 });
+    return validated || plaqueSvg({ title: p.name, year: '', color: p.color, w: 900, h: 1200 });
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // RENDERERS (all dynamic content escaped)
-  // ─────────────────────────────────────────────────────────────
+  // ─── RENDERERS ───────────────────────────────────────────────
 
   function cardArtwork(a, priority) {
     var artist = artistBySlug(a.artist);
     var loading = priority ? 'eager' : 'lazy';
-    return '<a href="#" data-artwork="' + escapeAttr(a.slug) + '" class="art-card group block cursor-pointer">' +
-      '<div class="art-frame relative aspect-[4/5]">' +
-        '<img src="' + escapeAttr(artworkImage(a)) + '" alt="' + escapeAttr(a.title + ', ' + a.year) + '" ' +
-             'class="absolute inset-0 w-full h-full object-cover" loading="' + loading + '" ' +
-             'referrerpolicy="no-referrer" />' +
+    return '<a href="#" data-artwork="' + escapeAttr(a.slug) + '" class="art-card">' +
+      '<div class="art-frame aspect-4-5">' +
+        '<img src="' + escapeAttr(artworkImage(a)) + '" alt="' + escapeAttr(a.title + ', ' + a.year) + '" loading="' + loading + '" referrerpolicy="no-referrer" />' +
       '</div>' +
-      '<div class="pt-5">' +
+      '<div class="art-meta">' +
         '<p class="eyebrow">' + escapeHTML(artist ? artist.name : '') + '</p>' +
-        '<h3 class="font-display text-xl lg:text-2xl text-umber-800 mt-1 leading-tight">' +
-          '<em class="not-italic">' + escapeHTML(a.title) + '</em>' +
-          '<span class="text-umber-400 font-light italic">, ' + escapeHTML(a.year) + '</span>' +
-        '</h3>' +
-        '<p class="text-xs text-umber-500 mt-2 tracking-wide">' +
-          escapeHTML(a.medium) + ' \u00b7 ' + escapeHTML(a.dimensions) +
-        '</p>' +
+        '<h3 class="art-title"><em>' + escapeHTML(a.title) + '</em><span class="year">, ' + escapeHTML(a.year) + '</span></h3>' +
+        '<p class="art-details">' + escapeHTML(a.medium) + ' \u00b7 ' + escapeHTML(a.dimensions) + '</p>' +
       '</div>' +
     '</a>';
   }
@@ -353,19 +249,16 @@
   function cardArtist(p, i) {
     var index = String((i || 0) + 1);
     if (index.length === 1) index = '0' + index;
-    return '<a href="#" data-artist="' + escapeAttr(p.slug) + '" class="group block cursor-pointer">' +
-      '<div class="art-frame relative aspect-[3/4]">' +
-        '<img src="' + escapeAttr(artistImage(p)) + '" alt="' + escapeAttr(p.name) + '" ' +
-             'class="absolute inset-0 w-full h-full object-cover" referrerpolicy="no-referrer" />' +
-        '<span class="absolute top-5 left-5 year-numeral text-parchment-100 text-4xl drop-shadow-lg">' + index + '</span>' +
+    return '<a href="#" data-artist="' + escapeAttr(p.slug) + '" class="art-card">' +
+      '<div class="art-frame aspect-3-4">' +
+        '<img src="' + escapeAttr(artistImage(p)) + '" alt="' + escapeAttr(p.name) + '" referrerpolicy="no-referrer" />' +
+        '<span class="artist-card-number">' + index + '</span>' +
       '</div>' +
-      '<div class="pt-6">' +
+      '<div class="art-meta">' +
         '<p class="eyebrow">' + escapeHTML(p.movement) + '</p>' +
-        '<h3 class="font-display text-3xl text-umber-800 mt-1">' + escapeHTML(p.name) + '</h3>' +
-        '<p class="mt-3 text-sm text-umber-500 max-w-md leading-relaxed">' + escapeHTML(p.shortBio) + '</p>' +
-        '<span class="mt-5 inline-flex items-center gap-2 text-xs tracking-widest uppercase text-umber-700 group-hover:text-ochre-600 transition-colors">' +
-          'View profile <span aria-hidden="true" class="transition-transform group-hover:translate-x-1">\u2192</span>' +
-        '</span>' +
+        '<h3 class="font-display text-3xl mt-1" style="color:var(--umber-800);">' + escapeHTML(p.name) + '</h3>' +
+        '<p class="mt-3 text-sm leading-relaxed" style="color:var(--umber-500); max-width:28rem;">' + escapeHTML(p.shortBio) + '</p>' +
+        '<span class="mt-5 btn-link">View profile <span aria-hidden="true">\u2192</span></span>' +
       '</div>' +
     '</a>';
   }
@@ -385,7 +278,6 @@
     document.getElementById('gallery-count').textContent = items.length + ' paintings';
     document.getElementById('gallery-grid').innerHTML = items.map(function (a) { return cardArtwork(a); }).join('');
 
-    // Build filter chips with escaped attributes
     var fbar = document.getElementById('filters');
     var allChip = '<a href="#" data-filter="" class="chip ' + (!filter ? 'is-active' : '') + '">All painters</a>';
     var artistChips = ARTISTS.map(function (a) {
@@ -394,17 +286,6 @@
     }).join('');
     fbar.innerHTML = allChip + artistChips;
 
-    // Style chips
-    var chips = document.querySelectorAll('.chip');
-    for (var i = 0; i < chips.length; i++) {
-      var isActive = chips[i].classList.contains('is-active');
-      chips[i].className = 'chip px-4 py-2 rounded-full text-xs tracking-widest uppercase border transition-colors ' +
-        (isActive
-          ? 'bg-umber-800 text-parchment-100 border-umber-800'
-          : 'bg-transparent text-umber-700 border-umber-800/20 hover:border-umber-800/60');
-    }
-
-    // Filter handlers
     var filterEls = document.querySelectorAll('#filters .chip');
     for (var j = 0; j < filterEls.length; j++) {
       filterEls[j].addEventListener('click', function (e) {
@@ -426,54 +307,50 @@
     if (!a) return;
     var works = worksByArtist(slug);
     var bioHtml = a.bio.map(function (p, i) {
-      var cls = i === 0 ? 'font-display text-2xl leading-[1.5] text-umber-800' : '';
-      return '<p class="' + cls + '">' + escapeHTML(p) + '</p>';
+      var style = i === 0 ? 'font-family:var(--font-display); font-size:1.5rem; line-height:1.5; color:var(--umber-800);' : '';
+      return '<p style="' + style + '">' + escapeHTML(p) + '</p>';
     }).join('');
     var firstName = escapeHTML(a.name.split(' ')[0]);
 
-    var html = '<header class="mx-auto max-w-7xl px-6 lg:px-10 grid lg:grid-cols-12 gap-12 lg:gap-20 items-end">' +
+    var html = '<header class="container grid lg:grid-cols-12 gap-12 lg:gap-20 items-end">' +
       '<div class="lg:col-span-7">' +
         '<p class="eyebrow mb-6">' + escapeHTML(a.movement) + ' \u00b7 b. ' + escapeHTML(a.bornPlace) + '</p>' +
-        '<h1 class="font-display text-5xl md:text-7xl lg:text-8xl text-umber-800 leading-[0.95] tracking-tight">' + escapeHTML(a.name) + '</h1>' +
-        '<p class="mt-8 text-lg text-umber-600 leading-relaxed max-w-xl">' + escapeHTML(a.shortBio) + '</p>' +
+        '<h1 class="font-display text-5xl md:text-7xl lg:text-8xl leading-tight" style="color:var(--umber-800); letter-spacing:-0.025em; line-height:0.95;">' + escapeHTML(a.name) + '</h1>' +
+        '<p class="mt-8 text-lg leading-relaxed" style="color:var(--umber-600); max-width:36rem;">' + escapeHTML(a.shortBio) + '</p>' +
       '</div>' +
       '<figure class="lg:col-span-5">' +
-        '<div class="relative aspect-[3/4] bg-parchment-200">' +
-          '<img src="' + escapeAttr(artistImage(a)) + '" alt="' + escapeAttr('Portrait of ' + a.name) + '" class="absolute inset-0 w-full h-full object-cover" referrerpolicy="no-referrer" />' +
+        '<div class="art-frame aspect-3-4">' +
+          '<img src="' + escapeAttr(artistImage(a)) + '" alt="' + escapeAttr('Portrait of ' + a.name) + '" referrerpolicy="no-referrer" />' +
         '</div>' +
-        '<figcaption class="mt-3 text-xs text-umber-500 italic text-right">' + escapeHTML(a.name) + ', portrait</figcaption>' +
+        '<figcaption class="mt-3 text-xs italic text-right" style="color:var(--umber-500);">' + escapeHTML(a.name) + ', portrait</figcaption>' +
       '</figure>' +
     '</header>' +
-    '<section class="mx-auto max-w-3xl px-6 lg:px-10 mt-24 space-y-8 text-lg text-umber-700 leading-relaxed">' + bioHtml + '</section>' +
-    '<section class="mt-32 mx-auto max-w-7xl px-6 lg:px-10">' +
+    '<section class="container mt-24 space-y-8 text-lg leading-relaxed" style="max-width:48rem; color:var(--umber-700);">' + bioHtml + '</section>' +
+    '<section class="container mt-32">' +
       '<div class="flex items-end justify-between mb-12">' +
         '<div>' +
           '<p class="eyebrow mb-3">Selected works</p>' +
-          '<h2 class="font-display text-4xl md:text-5xl text-umber-800">In the studio of ' + firstName + '</h2>' +
+          '<h2 class="font-display text-4xl md:text-5xl" style="color:var(--umber-800);">In the studio of ' + firstName + '</h2>' +
         '</div>' +
-        '<p class="text-xs tracking-widest uppercase text-umber-500 hidden md:block">' + works.length + ' ' + (works.length === 1 ? 'work' : 'works') + '</p>' +
+        '<p class="text-xs tracking-widest uppercase md:block" style="color:var(--umber-500); display:none;">' + works.length + ' ' + (works.length === 1 ? 'work' : 'works') + '</p>' +
       '</div>' +
       '<div class="hairline mb-14"></div>';
 
     if (works.length) {
-      html += '<div class="grid gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-3">' +
+      html += '<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8" style="row-gap:4rem;">' +
         works.map(function (w, i) { return cardArtwork(w, i < 3); }).join('') +
       '</div>';
     } else {
-      html += '<p class="italic text-umber-500">Works for this painter are being prepared for the archive.</p>';
+      html += '<p class="italic" style="color:var(--umber-500);">Works for this painter are being prepared for the archive.</p>';
     }
     html += '</section>';
 
     document.getElementById('artist-profile').innerHTML = html;
     attachCardLinks();
-    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
   }
 
-  function plaqueRow(label, value) {
-    return '<div class="grid grid-cols-3 gap-4">' +
-      '<dt class="eyebrow">' + escapeHTML(label) + '</dt>' +
-      '<dd class="col-span-2 text-umber-800">' + escapeHTML(value) + '</dd>' +
-    '</div>';
+  function metaRow(label, value) {
+    return '<div><dt class="eyebrow">' + escapeHTML(label) + '</dt><dd>' + escapeHTML(value) + '</dd></div>';
   }
 
   function renderArtwork(slug) {
@@ -482,34 +359,32 @@
     var artist = artistBySlug(a.artist);
     var siblings = worksByArtist(a.artist).filter(function (x) { return x.slug !== slug; }).slice(0, 3);
 
-    var html = '<div class="mx-auto max-w-7xl px-6 lg:px-10 grid lg:grid-cols-12 gap-12 lg:gap-20 items-start">' +
+    var html = '<div class="container artwork-detail-grid">' +
       '<figure class="lg:col-span-8">' +
-        '<div class="relative aspect-[4/3] bg-parchment-200 overflow-hidden">' +
-          '<img src="' + escapeAttr(artworkImage(a)) + '" alt="' + escapeAttr(a.title + ', ' + a.year) + '" class="absolute inset-0 w-full h-full object-contain bg-umber-800/[0.03]" referrerpolicy="no-referrer" />' +
+        '<div class="artwork-image-wrap">' +
+          '<img src="' + escapeAttr(artworkImage(a)) + '" alt="' + escapeAttr(a.title + ', ' + a.year) + '" referrerpolicy="no-referrer" />' +
         '</div>' +
       '</figure>' +
-      '<div class="lg:col-span-4 lg:sticky lg:top-32">' +
+      '<div class="lg:col-span-4 lg:sticky lg:top-32 artwork-meta">' +
         '<p class="eyebrow">' + escapeHTML(artist ? artist.name : '') + ' \u00b7 ' + escapeHTML(a.year) + '</p>' +
-        '<h1 class="font-display text-4xl md:text-5xl lg:text-6xl text-umber-800 leading-[1.05] mt-3 italic">' + escapeHTML(a.title) + '</h1>' +
-        '<dl class="mt-10 space-y-5 text-sm">' +
-          plaqueRow('Painter', artist ? artist.name : a.artist) +
-          plaqueRow('Year', String(a.year)) +
-          plaqueRow('Medium', a.medium) +
-          plaqueRow('Dimensions', a.dimensions) +
+        '<h1 class="font-display text-4xl md:text-5xl lg:text-6xl italic mt-3" style="color:var(--umber-800); line-height:1.05;">' + escapeHTML(a.title) + '</h1>' +
+        '<dl class="mt-10 text-sm">' +
+          metaRow('Painter', artist ? artist.name : a.artist) +
+          metaRow('Year', String(a.year)) +
+          metaRow('Medium', a.medium) +
+          metaRow('Dimensions', a.dimensions) +
         '</dl>' +
         '<div class="hairline my-10"></div>' +
-        '<p class="text-umber-700 leading-relaxed">' + escapeHTML(a.description) + '</p>' +
-        '<a href="#" data-artist="' + escapeAttr(a.artist) + '" class="mt-10 inline-flex items-center gap-2 text-xs tracking-widest uppercase text-ochre-600 hover:text-umber-800 transition-colors">' +
-          'About ' + escapeHTML(artist ? artist.name : '') + ' \u2192' +
-        '</a>' +
+        '<p class="leading-relaxed" style="color:var(--umber-700);">' + escapeHTML(a.description) + '</p>' +
+        '<a href="#" data-artist="' + escapeAttr(a.artist) + '" class="mt-10 btn-link" style="color:var(--ochre-600);">About ' + escapeHTML(artist ? artist.name : '') + ' \u2192</a>' +
       '</div>' +
     '</div>';
 
     if (siblings.length) {
-      html += '<section class="mt-40 mx-auto max-w-7xl px-6 lg:px-10">' +
+      html += '<section class="container mt-40">' +
         '<p class="eyebrow mb-4">Also by ' + escapeHTML(artist ? artist.name : '') + '</p>' +
         '<div class="hairline mb-12"></div>' +
-        '<div class="grid gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-3">' +
+        '<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8" style="row-gap:4rem;">' +
           siblings.map(function (s) { return cardArtwork(s); }).join('') +
         '</div>' +
       '</section>';
@@ -517,7 +392,6 @@
 
     document.getElementById('artwork-detail').innerHTML = html;
     attachCardLinks();
-    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
   }
 
   function attachCardLinks() {
@@ -544,9 +418,7 @@
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // ROUTING — allowlist of valid views
-  // ─────────────────────────────────────────────────────────────
+  // ─── ROUTING (allowlist) ────────────────────────────────────
 
   var VALID_VIEWS = ['home', 'biography', 'gallery', 'family', 'artist', 'artwork', 'contact'];
 
@@ -558,16 +430,14 @@
     if (target) {
       target.classList.add('is-active');
       target.style.animation = 'none';
-      void target.offsetWidth; // force reflow
+      void target.offsetWidth;
       target.style.animation = '';
     }
     var navLinks = document.querySelectorAll('.nav-link');
     for (var k = 0; k < navLinks.length; k++) {
-      var active = navLinks[k].getAttribute('data-view') === name;
-      navLinks[k].classList.toggle('text-umber-800', active);
-      navLinks[k].classList.toggle('text-umber-500', !active);
+      navLinks[k].classList.toggle('is-active', navLinks[k].getAttribute('data-view') === name);
     }
-    document.getElementById('mobile-menu').classList.add('hidden');
+    document.getElementById('mobile-menu').classList.remove('is-open');
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (name === 'gallery') renderGallery();
     if (name === 'family')  renderFamily();
@@ -581,26 +451,19 @@
     }
   });
 
-  // ─────────────────────────────────────────────────────────────
-  // CONTACT FORM — input validation + mailto: handoff
-  // ─────────────────────────────────────────────────────────────
+  // ─── CONTACT WIRING & VALIDATION ─────────────────────────────
 
   function wireContact() {
     var phone = CONFIG.phone;
     var email = CONFIG.email;
-    var whatsapp = CONFIG.whatsapp;
+    var safeWhatsapp = /^\d{10,15}$/.test(CONFIG.whatsapp) ? CONFIG.whatsapp : '';
 
-    // Validate WhatsApp number is digits only (defense in depth)
-    var safeWhatsapp = /^\d{10,15}$/.test(whatsapp) ? whatsapp : '';
-
-    // Contact page direct channels
     document.getElementById('row-wa').href = safeWhatsapp ? 'https://wa.me/' + safeWhatsapp : '#';
     document.getElementById('row-phone').href = 'tel:' + encodeURIComponent(phone);
     document.getElementById('row-email').href = 'mailto:' + encodeURIComponent(email) + '?subject=' + encodeURIComponent('Inquiry — Rustamadji Gallery');
     document.getElementById('phone-val').textContent = phone;
     document.getElementById('email-val').textContent = email;
 
-    // Footer
     var fp = document.getElementById('footer-phone');
     fp.href = 'tel:' + encodeURIComponent(phone);
     fp.textContent = phone;
@@ -608,7 +471,6 @@
     fe.href = 'mailto:' + encodeURIComponent(email);
     fe.textContent = email;
 
-    // Chat widget
     document.getElementById('cw-wa').href = safeWhatsapp ? 'https://wa.me/' + safeWhatsapp : '#';
     document.getElementById('cw-phone').href = 'tel:' + encodeURIComponent(phone);
     document.getElementById('cw-phone-val').textContent = phone;
@@ -617,12 +479,11 @@
   }
 
   document.getElementById('chat-toggle').addEventListener('click', function () {
-    document.getElementById('chat-panel').classList.toggle('hidden');
+    document.getElementById('chat-panel').classList.toggle('is-open');
   });
 
   document.getElementById('contact-form').addEventListener('submit', function (e) {
     e.preventDefault();
-    // Defensive input validation — even though target is mailto:, we sanitise.
     var name    = String(document.getElementById('cf-name').value || '').trim().slice(0, 100);
     var from    = String(document.getElementById('cf-email').value || '').trim().slice(0, 254);
     var subject = String(document.getElementById('cf-subject').value || '').trim().slice(0, 200);
@@ -637,7 +498,6 @@
       errEl.textContent = 'Please enter a valid email address.';
       return;
     }
-    // Reject obvious header-injection attempts
     if (/[\r\n]/.test(name + from + subject)) {
       errEl.textContent = 'Invalid characters detected.';
       return;
@@ -651,25 +511,21 @@
   });
 
   document.getElementById('menu-btn').addEventListener('click', function () {
-    document.getElementById('mobile-menu').classList.toggle('hidden');
+    var menu = document.getElementById('mobile-menu');
+    menu.classList.toggle('is-open');
+    this.setAttribute('aria-expanded', menu.classList.contains('is-open'));
   });
 
   window.addEventListener('scroll', function () {
     var nav = document.getElementById('nav');
-    if (window.scrollY > 12) {
-      nav.classList.add('bg-parchment-100/85', 'backdrop-blur-md', 'border-b', 'border-umber-800/10');
-    } else {
-      nav.classList.remove('bg-parchment-100/85', 'backdrop-blur-md', 'border-b', 'border-umber-800/10');
-    }
+    if (window.scrollY > 12) nav.classList.add('scrolled');
+    else nav.classList.remove('scrolled');
   }, { passive: true });
 
-  // ─────────────────────────────────────────────────────────────
-  // BOOT
-  // ─────────────────────────────────────────────────────────────
+  // ─── BOOT ────────────────────────────────────────────────────
 
   document.getElementById('year').textContent = new Date().getFullYear();
   wireContact();
   renderHome();
   attachCardLinks();
-  if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
 })();
