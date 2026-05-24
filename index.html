@@ -15,26 +15,16 @@
 
 <!-- Content Security Policy:
      • default-src 'self'                — only same-origin by default
-     • script-src                        — pinned Tailwind + Lucide CDNs
+     • script-src                        — pinned CDNs + unsafe-eval (required by Tailwind CDN JIT)
      • style-src 'unsafe-inline'         — required for Tailwind utility classes
      • img-src 'self' data:              — only local images + inline SVG plaques
      • frame-ancestors 'none'            — prevents clickjacking (CWE-1021)
      • base-uri 'self'                   — prevents <base> tag injection
      • form-action 'self' mailto:        — restricts form submissions
-     • upgrade-insecure-requests         — forces HTTPS on all resources -->
-<meta http-equiv="Content-Security-Policy" content="
-  default-src 'self';
-  script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com;
-  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-  font-src 'self' https://fonts.gstatic.com data:;
-  img-src 'self' data: blob:;
-  connect-src 'self';
-  base-uri 'self';
-  form-action 'self' mailto:;
-  frame-ancestors 'none';
-  object-src 'none';
-  upgrade-insecure-requests;
-">
+     • upgrade-insecure-requests         — forces HTTPS on all resources
+     NOTE: 'unsafe-eval' needed because Tailwind CDN uses new Function() to
+     compile utility classes at runtime. To remove this, compile Tailwind locally. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self'; base-uri 'self'; form-action 'self' mailto:; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests;">
 
 <!-- Defense-in-depth headers (CWE-79, CWE-200, CWE-829) -->
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
