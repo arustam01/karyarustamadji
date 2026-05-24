@@ -2,41 +2,102 @@
 
 **A family archive of Indonesian realism**
 
-Online gallery and archive for painter Rustamadji of Klaten (b. 1921) and his sons, Bodas Erlangga and Karang Sasongko — three generations of realist painting from Central Java.
+Official online gallery and archive for painter **Rustamadji of Klaten** (b. 19 January 1921), Indonesian master of realism, and his sons **Bodas Erlangga** and **Karang Sasongko** — three generations of disciplined, observation-led painting from Central Java.
 
-![Rustamadji Gallery Preview](https://via.placeholder.com/1200x630/f5efe4/1a1410?text=Rustamadji+Gallery)
+🌐 **Live site**: https://arustam01.github.io/karyarustamadji/
 
 ---
 
-## 🎨 Features
+## ✨ Features
 
+- **11 authenticated paintings** by Rustamadji with full catalogue details
 - **Zero-build static site** — pure HTML/CSS/JS, no Node.js or npm required
-- **Single-page application** with smooth client-side routing between 6 pages
+- **Single-page application** with smooth client-side routing
 - **Museum-editorial aesthetic** — parchment background, serif typography, paper grain texture
 - **Fully responsive** — mobile-first design with Tailwind CSS
-- **6 complete pages**:
-  - Home (hero + featured works + family teaser)
-  - Biography (Rustamadji's life story)
-  - Gallery (filterable catalogue of all artworks)
-  - Family (profiles of Bodas Erlangga & Karang Sasongko)
-  - Individual artist pages with their works
-  - Contact (direct channels + email form)
+- **Hardened security** — OWASP Top 10 / SANS CWE Top 25 compliant (see [Security](#-security))
+- **Accessible** — WCAG 2.1 AA: skip links, ARIA labels, reduced-motion support, keyboard navigation
 - **Floating chat widget** with WhatsApp / Phone / Email quick links
-- **Easy to scale** — add artworks by editing a single JavaScript array
 
 ---
 
 ## 📂 File Structure
 
 ```
-rustamadji-gallery/
-├── index.html          # Main HTML (151 KB, self-contained with embedded portrait)
-├── style.css           # Global styles (4 KB)
-├── .gitignore          # Git ignore rules
-└── README.md           # This file
+karyarustamadji/
+├── index.html          # Markup + security headers (CSP, etc.)
+├── app.js              # Application logic with input validation & XSS protection
+├── style.css           # Global styles (design tokens, animations)
+├── images/             # Painting & portrait files
+│   ├── rustamadji-portrait.png
+│   ├── baturraden.png
+│   ├── candi-prambanan.png
+│   ├── desa-deles.png
+│   ├── hutan-baturraden.png
+│   ├── hutan-wonogiri.png
+│   ├── kali.png
+│   ├── kaliurang.png
+│   ├── kemarau.png
+│   ├── mengolah-tanah.png
+│   ├── prambanan-pepohonan.png
+│   └── rembang-tebu.png
+├── .gitignore
+├── README.md
+└── LICENSE
 ```
 
-**That's it.** No build tools, no dependencies, no package.json. Just open `index.html` in a browser.
+---
+
+## 🔒 Security
+
+This site is hardened against the **OWASP Top 10 (2021)** and **SANS CWE Top 25** vulnerabilities.
+
+### Defenses Implemented
+
+| Risk | CWE | Mitigation |
+|------|-----|------------|
+| **Cross-Site Scripting (XSS)** | CWE-79 | All dynamic content escaped via `escapeHTML()` before insertion. No `eval()`, no `Function()` constructor. Image paths validated against an allowlist regex. |
+| **Clickjacking** | CWE-1021 | CSP `frame-ancestors 'none'` prevents the site being embedded in `<iframe>` on other domains. |
+| **Code Injection** | CWE-94 | All user-controllable data passes through `escapeAttr()` / `escapeHTML()`. CSP restricts script sources to pinned CDNs. |
+| **Improper Input Validation** | CWE-20 | Contact form validates email format, enforces length limits (100/254/200/5000 chars), and rejects CRLF injection attempts. |
+| **Path Traversal** | CWE-22 | Image paths validated against `^images/[a-zA-Z0-9_\-]+\.(png\|jpg\|jpeg\|webp\|svg)$`. Data URIs restricted to image types only. |
+| **Vulnerable Components** | CWE-1357 | CDN dependency (Lucide) pinned to specific version (`@0.408.0`) rather than `latest`. |
+| **Information Disclosure** | CWE-200 | `referrerpolicy="no-referrer"` on all external resources. `Referrer-Policy: strict-origin-when-cross-origin`. |
+| **Insecure Protocols** | A02:2021 | CSP `upgrade-insecure-requests` forces HTTPS. GitHub Pages enforces HTTPS by default. |
+| **MIME Sniffing** | CWE-430 | `X-Content-Type-Options: nosniff` prevents browsers guessing content types. |
+| **External Link Hijacking** | CWE-1022 | All `target="_blank"` links use `rel="noopener noreferrer"`. |
+
+### Content Security Policy
+
+```
+default-src 'self';
+script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com;
+style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+font-src 'self' https://fonts.gstatic.com data:;
+img-src 'self' data: blob:;
+connect-src 'self';
+base-uri 'self';
+form-action 'self' mailto:;
+frame-ancestors 'none';
+object-src 'none';
+upgrade-insecure-requests;
+```
+
+> **Note on `'unsafe-inline'`**: Required because Tailwind CDN injects styles dynamically. For maximum security in production, compile Tailwind locally to eliminate this directive.
+
+### Permissions Policy
+
+Disables unused browser APIs by default:
+```
+geolocation=(), microphone=(), camera=(), payment=(), usb=(), fullscreen=(self)
+```
+
+### Testing the Security Posture
+
+Recommended tools after deployment:
+- **[Mozilla Observatory](https://observatory.mozilla.org/)** — overall security grading
+- **[Security Headers](https://securityheaders.com/)** — header analysis
+- **[CSP Evaluator](https://csp-evaluator.withgoogle.com/)** — CSP review
 
 ---
 
@@ -44,264 +105,161 @@ rustamadji-gallery/
 
 ### Local Development
 
-1. **Clone or download** this repository
-2. **Open `index.html`** in any modern browser (Chrome, Firefox, Safari, Edge)
-3. **Done.** The site is fully functional locally.
+1. **Clone** the repository:
+   ```bash
+   git clone https://github.com/arustam01/karyarustamadji.git
+   cd karyarustamadji
+   ```
+2. **Open `index.html`** in any modern browser, OR serve over HTTP for CSP to behave naturally:
+   ```bash
+   # Python 3
+   python3 -m http.server 8000
 
-> **Note:** `style.css` must be in the same folder as `index.html`.
+   # Node
+   npx serve .
+   ```
+3. Visit `http://localhost:8000`.
 
-### Live Preview
-
-Double-click `index.html`, or:
-```bash
-# macOS
-open index.html
-
-# Linux
-xdg-open index.html
-
-# Windows
-start index.html
-```
+> Opening the file via `file://` will trigger some CSP warnings — these are harmless locally, but always test via HTTP before deploy.
 
 ---
 
 ## 🎨 Customization
 
-### 1. Edit Contact Information
+### Edit Contact Information
 
-Open `index.html`, find the `CONFIG` object near line 400:
-
+In `app.js`, near the top:
 ```javascript
-const CONFIG = {
-  phone:    '+62-812-3456-7890',      // ← Change this
-  email:    'archive@rustamadji.id',  // ← Change this
-  whatsapp: '6281234567890',          // ← Change this (format: country code + number, no +)
+var CONFIG = {
+  phone:    '+62-812-3456-7890',
+  email:    'archive@rustamadji.id',
+  whatsapp: '6281234567890'   // digits only, country code + number
 };
 ```
 
-Save. Contact info auto-updates across the entire site (nav, footer, chat widget, contact page).
+### Add a New Artwork
 
----
-
-### 2. Change Colors & Fonts
-
-Open `style.css`, edit the `:root` variables:
-
-```css
-:root {
-  /* Colors */
-  --color-parchment-100: #f5efe4;  /* Background */
-  --color-umber-800: #1a1410;      /* Text */
-  --color-ochre-500: #b8924a;      /* Accent (buttons, links) */
-  
-  /* Fonts */
-  --font-display: 'Cormorant Garamond', Georgia, serif;
-  --font-body:    'Inter', system-ui, sans-serif;
-  --font-mono:    'JetBrains Mono', monospace;
-}
-```
-
-**Example: Dark mode** — change background to dark:
-```css
---color-parchment-100: #1a1410;  /* Dark background */
---color-umber-800: #f5efe4;      /* Light text */
-```
-
-**Example: System fonts** — remove Google Fonts dependency:
-```css
---font-display: Georgia, serif;
---font-body:    system-ui, sans-serif;
---font-mono:    'Courier New', monospace;
-```
-
----
-
-### 3. Add New Artworks
-
-Open `index.html`, find the `ARTWORKS` array (around line 450):
-
+In `app.js`, push to the `ARTWORKS` array:
 ```javascript
 ARTWORKS.push({
-  slug: 'new-painting',              // Unique ID (lowercase, hyphens)
-  title: 'New Painting Title',       // Display name
-  artist: 'rustamadji',              // Artist slug: rustamadji | bodas-erlangga | karang-sasongko
-  year: 1980,                        // Year painted
-  medium: 'Oil on canvas',           // Medium
-  dimensions: '100 cm x 140 cm',     // Size
-  featured: true,                    // Show on homepage? (optional)
-  color: '#5a4231',                  // SVG placeholder tint color (optional)
-  img: '/path/to/image.jpg',         // Image path (optional — uses SVG plaque if missing)
-  description: 'Description of the painting goes here.'
+  slug:        'new-painting',          // lowercase, hyphens only
+  title:       'Title of the Painting',
+  artist:      'rustamadji',            // rustamadji | bodas-erlangga | karang-sasongko
+  year:        1980,
+  medium:      'Oil on canvas',
+  dimensions:  '100 cm × 140 cm',
+  featured:    true,                    // optional — homepage display
+  img:         'images/new-painting.png',
+  description: 'Curatorial description here.'
 });
 ```
 
-**Image options:**
-- **Real scan**: `img: '/images/new-painting.jpg'` (put image file in same folder)
-- **No image yet**: omit `img` — auto-generates a parchment-style SVG plaque with title/year
-- **Embedded base64**: `img: 'data:image/jpeg;base64,...'` (self-contained, no external file)
+Then drop the image file into `images/new-painting.png`. That's it.
 
-Save and refresh. The new artwork appears in:
-- Gallery page (with correct filter)
-- Artist's individual page
-- "Also by [artist]" sections
+### Change Colors / Fonts
 
----
-
-### 4. Edit Artist Biographies
-
-In `index.html`, find the `ARTISTS` array (~line 380):
-
-```javascript
-{
-  slug: 'rustamadji',
-  name: 'Rustamadji',
-  role: 'Realist Painter',
-  movement: 'Realism',
-  bornPlace: 'Klaten, Central Java',
-  bornDate: '19 January 1921',
-  portrait: null,  // or '/images/portrait.jpg'
-  shortBio: 'One-sentence bio for cards.',
-  bio: [
-    'First paragraph of biography...',
-    'Second paragraph...',
-    'Third paragraph...'
-  ]
+Edit CSS variables in `style.css`:
+```css
+:root {
+  --color-parchment-100: #f5efe4;  /* Background */
+  --color-umber-800:    #1a1410;   /* Text */
+  --color-ochre-500:    #b8924a;   /* Accent */
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body:    'Inter', system-ui, sans-serif;
 }
 ```
-
-Edit the `bio` array. Each string is a paragraph.
 
 ---
 
 ## 🌐 Deployment
 
-### Option 1: GitHub Pages (Recommended)
+### GitHub Pages (current setup)
 
-1. **Create a new GitHub repository** (public or private)
-2. **Upload files**:
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial commit"
-   git branch -M main
-   git remote add origin https://github.com/YOUR_USERNAME/rustamadji-gallery.git
-   git push -u origin main
-   ```
-3. **Enable GitHub Pages**:
-   - Go to repository Settings → Pages
-   - Source: Deploy from `main` branch, root folder
-   - Save
-4. **Done.** Site is live at `https://YOUR_USERNAME.github.io/rustamadji-gallery/`
+1. Push to `main` branch
+2. Settings → Pages → Source: `Deploy from a branch` → `main` / `/ (root)`
+3. Live at `https://USERNAME.github.io/REPO/`
 
-### Option 2: Netlify
+### Custom Domain
 
-1. **Drag & drop** the entire folder to [Netlify Drop](https://app.netlify.com/drop)
-2. **Done.** Instant deployment with a random URL (e.g. `https://random-name-123.netlify.app`)
-3. **Optional**: Configure custom domain in Netlify dashboard
-
-### Option 3: Vercel
-
-1. Install [Vercel CLI](https://vercel.com/download): `npm i -g vercel`
-2. In project folder: `vercel`
-3. Follow prompts. Deploy completes in ~10 seconds.
-4. **Done.** Live at `https://project-name.vercel.app`
-
-### Option 4: Any Web Host
-
-Upload via FTP/SFTP to any hosting provider (shared hosting, VPS, etc.). Just upload both files to the public folder (e.g. `public_html/`).
+1. In repo Settings → Pages → Custom domain: `www.karyarustamadji.com`
+2. At domain registrar, add DNS records:
+   - **CNAME**: `www` → `arustam01.github.io`
+   - **A records** (for apex domain): point to GitHub Pages IPs:
+     ```
+     185.199.108.153
+     185.199.109.153
+     185.199.110.153
+     185.199.111.153
+     ```
+3. Wait ~24 hours for DNS propagation.
 
 ---
 
-## 🎯 Browser Support
+## 📚 The Archive
 
-- ✅ Chrome 90+
-- ✅ Firefox 88+
-- ✅ Safari 14+
-- ✅ Edge 90+
+### Painter
 
-**Progressive enhancement**: Works on older browsers but with reduced animations/effects.
+**Rustamadji Klaten** (b. 19 January 1921)
+- Indonesian master of realism
+- Documented in *Meniti Bumi / Walking the Earth, Rustamadji Klaten*
+- Subjects: Javanese landscapes, portraits, working life, Hindu temples
+
+### Catalogue (11 works currently online)
+
+| Title | Year | Dimensions |
+|-------|------|------------|
+| Kali | 1974 | 98 × 140 cm |
+| Kaliurang | 1982 | 142 × 215.5 cm |
+| Desa Deles | 1983 | 154 × 110 cm |
+| Prambanan dari Balik Pepohonan | 1983 | 110.5 × 155 cm |
+| Mengolah Tanah | 1984 | 108 × 143 cm |
+| Baturraden | 1987 | 96 × 140 cm |
+| Hutan Baturraden | 1987 | 140 × 98 cm |
+| Rembang Tebu | 1987 | 140 × 200 cm |
+| Candi Prambanan | 1988 | 170 × 150 cm |
+| Kemarau | 1995 | 110 × 155 cm |
+| Hutan di Wonogiri | 1996 | 98 × 140 cm |
+
+All works oil on canvas.
 
 ---
 
 ## 🛠 Tech Stack
 
-- **HTML5** — semantic markup
-- **CSS3** — custom properties (CSS variables), Flexbox, Grid
+- **HTML5** — semantic markup, ARIA landmarks
+- **CSS3** — custom properties, Flexbox, Grid, `prefers-reduced-motion`
+- **Vanilla JavaScript** (IIFE, strict mode) — no frameworks
 - **Tailwind CSS** (CDN) — utility classes
-- **Vanilla JavaScript** — no frameworks, no build step
-- **Google Fonts** — Cormorant Garamond (display), Inter (body), JetBrains Mono (labels)
-- **Lucide Icons** (CDN) — UI icons
+- **Google Fonts** — Cormorant Garamond, Inter, JetBrains Mono
+- **Lucide Icons** (v0.408.0, pinned) — UI icons
 
-**Total dependencies**: 3 CDN links. Zero npm packages. Zero build process.
-
----
-
-## 📸 Screenshots
-
-> **TODO**: Add actual screenshots after first deploy.
->
-> Suggested structure:
-> - `screenshots/home.png` — Hero section
-> - `screenshots/gallery.png` — Gallery grid
-> - `screenshots/biography.png` — Biography page
-> - `screenshots/mobile.png` — Mobile view
-
----
-
-## 🔄 Future Enhancements
-
-Ideas for v2 (requires backend or static site generator):
-
-- [ ] **CMS integration** (Sanity, Strapi, or Contentful) for non-technical content updates
-- [ ] **Search functionality** across artworks and biographies
-- [ ] **Multi-language support** (English / Bahasa Indonesia toggle)
-- [ ] **Image optimization** with next-gen formats (WebP, AVIF)
-- [ ] **Analytics** (Google Analytics or Plausible)
-- [ ] **SEO metadata** per page (Open Graph, Twitter Cards)
-- [ ] **Newsletter signup** with email service integration
-- [ ] **Print shop integration** (sell reproductions)
+**Zero npm dependencies. Zero build step.**
 
 ---
 
 ## 📝 License
 
-**Code**: MIT License (see [LICENSE](LICENSE) if you add one)
+**Code**: MIT License — see [LICENSE](LICENSE)
 
-**Artwork & Content**: © Rustamadji Family Estate. All rights reserved.
-
-The source code for this website is open source and free to use. However, the paintings, photographs, and biographical content remain the copyright of the Rustamadji family estate. Please contact the archive before reproducing any artwork images.
+**Artwork & biographical content**: © Rustamadji Family Estate. All rights reserved. Use of artwork images or biographical text requires written permission. Contact `archive@rustamadji.id`.
 
 ---
 
 ## 👤 Contact
 
-For inquiries about the archive, exhibition loans, prints, or permissions:
-
 - **Email**: archive@rustamadji.id
 - **Phone**: +62-812-3456-7890
-- **WhatsApp**: [Open chat](https://wa.me/6281234567890)
 - **Location**: Klaten, Central Java, Indonesia
 
 ---
 
 ## 🙏 Credits
 
-- **Design & Development**: Built with care for the Rustamadji family archive
-- **Typography**: [Cormorant Garamond](https://fonts.google.com/specimen/Cormorant+Garamond) by Christian Thalmann, [Inter](https://rsms.me/inter/) by Rasmus Andersson
+- **Typography**: [Cormorant Garamond](https://fonts.google.com/specimen/Cormorant+Garamond), [Inter](https://rsms.me/inter/)
 - **Icons**: [Lucide](https://lucide.dev/)
 - **Framework**: [Tailwind CSS](https://tailwindcss.com/)
+- **Reference monograph**: *Meniti Bumi, Rustamadji Klaten / Walking the Earth, Rustamadji Klaten*
 
 ---
-
-## 📚 Reference
-
-The biography and artwork documentation on this site draw from:
-
-> *Meniti Bumi, Rustamadji Klaten / Walking the Earth, Rustamadji Klaten* — family monograph
-
----
-
-**Built with respect for three generations of observation-led painting.**
 
 *Klaten, Central Java · 1921–present*
