@@ -71,7 +71,7 @@
         "Rustamadji was born on 19 January 1921 in Klaten, a regency in Central Java situated between the slopes of Mount Merapi and the cultural heart of Surakarta. The light, the rice fields, and the volcanic ridges of his birthplace would become recurring subjects throughout a lifetime of painting.",
         "Working firmly within the tradition of realism, Rustamadji devoted himself to observed truth — figures rendered with anatomical precision, landscapes built from patient layers of oil, and portraits that read like quiet biographies. He refused the shortcuts of stylisation; every brushstroke had to answer to nature.",
         "His life and work are documented in the monograph \"Meniti Bumi, Rustamadji Klaten / Walking the Earth, Rustamadji Klaten\", which traces his journey across Java and the friendships and apprenticeships that shaped his eye.",
-        "Rustamadji raised two sons who became painters in their own right — Bodas Erlangga and Karang Sasongko — extending the family's commitment to disciplined, observation-led painting into a second generation."
+        "Rustamadji raised two sons who became painters in their own right — Bodas Erlangga and Karang Sasangka — extending the family's commitment to disciplined, observation-led painting into a second generation."
       ]
     },
     {
@@ -91,8 +91,8 @@
       ]
     },
     {
-      slug: 'karang-sasongko',
-      name: 'Karang Sasongko',
+      slug: 'karang-sasangka',
+      name: 'Karang Sasangka',
       role: 'Painter',
       movement: 'Realism',
       bornPlace: 'Klaten, Central Java',
@@ -101,7 +101,7 @@
       color: '#3f2e22',
       shortBio: "Son of Rustamadji. A realist with a sculptural sense of form \u2014 figures, horses, and the working life of Central Java.",
       bio: [
-        "Karang Sasongko studied painting under his father from childhood, then continued formally at art academies in Java. Where his older brother turned to atmosphere, Karang gravitated to form: muscled animals, working figures, the architecture of the human body in motion.",
+        "Karang Sasangka studied painting under his father from childhood, then continued formally at art academies in Java. Where his older brother turned to atmosphere, Karang gravitated to form: muscled animals, working figures, the architecture of the human body in motion.",
         "His canvases are built from dense layers of oil and an almost sculptural sense of edge. Horses, fishermen, and farmers recur as motifs \u2014 figures who, like his father's subjects, are observed rather than staged.",
         "Karang lives and works in Klaten, continuing the family studio tradition."
       ]
