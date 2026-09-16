@@ -304,7 +304,7 @@
 
   /* ─── DIORAMA (animated exhibition walkthrough / video simulation) ─── */
 
-  var DIORAMA_DURATION = 7000; // ms each slide plays before auto-advancing
+  var DIORAMA_DURATION = 9500; // ms each slide plays \u2014 unhurried, contemplative pace
   var dioramaSequenceCache = null;
   var dioramaBuilt = false;
   var dioramaIndex = 0;
@@ -317,11 +317,25 @@
     dioramaReducedMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   } catch (e) { dioramaReducedMotion = false; }
 
-  // ─── Ambient sound (generative, Web Audio API — no external audio files) ───
+  // ─── Ambient sound (generative, mindful/nature-inspired, Web Audio API only) ───
+  //
+  // Design intent: not a "track" but a living bed of sound \u2014 the way a calm,
+  // focus, or nature meditation app scores its scenes. A pentatonic scale is
+  // used throughout (no semitone clashes are possible), so any notes that
+  // happen to sound together are always consonant. Individual voices drift
+  // in and out on their own independent, slightly randomised schedules
+  // rather than moving in lockstep, so the texture never quite repeats and
+  // never feels mechanical. A soft synthesised reverb gives everything a
+  // sense of space, the way sound settles in a quiet room or open air.
+
   var DIORAMA_AMBIENT_LEVEL = 0.9; // master gain target when audible
   var dioramaSoundEnabled = true;  // default on; only actually starts on user gesture (Play)
   var dioramaAudioCtx = null;
   var dioramaAudioNodes = null;    // built lazily, started once, then only fades
+
+  // Two-octave C major pentatonic, low\u2013mid register: no note in this set
+  // ever clashes with another, however the generative voices happen to land.
+  var DIORAMA_SCALE = [130.81, 146.83, 164.81, 196.00, 220.00, 261.63, 293.66, 329.63, 392.00, 440.00];
 
   /** Lazily create the shared AudioContext. Returns null if unsupported. */
   function dioramaGetAudioContext() {
@@ -334,7 +348,9 @@
     return dioramaAudioCtx;
   }
 
-  /** A soft, warm noise buffer (leaky-integrated white noise) for a whisper of air/texture. */
+  function dioramaRandBetween(min, max) { return min + Math.random() * (max - min); }
+
+  /** A soft, warm noise buffer (leaky-integrated white noise) for a breath of air/texture. */
   function dioramaCreateNoiseBuffer(ctx, seconds) {
     var bufferSize = Math.floor(ctx.sampleRate * seconds);
     var buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
@@ -348,76 +364,146 @@
     return buffer;
   }
 
+  /** A synthesised soft-room impulse response, so the pad and chime have somewhere to breathe. */
+  function dioramaCreateImpulseResponse(ctx, duration, decay) {
+    var rate = ctx.sampleRate;
+    var length = Math.max(1, Math.floor(rate * duration));
+    var impulse = ctx.createBuffer(2, length, rate);
+    for (var ch = 0; ch < 2; ch++) {
+      var data = impulse.getChannelData(ch);
+      for (var i = 0; i < length; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+      }
+    }
+    return impulse;
+  }
+
   /**
-   * Build the ambient graph once: a slow-breathing pad of three
-   * detuned low sine tones (a calm open triad) through a warm
-   * lowpass filter, plus a very quiet bed of filtered noise for
-   * texture. Everything is scaled to sit far under speech/attention
-   * level \u2014 a bed, not a soundtrack. Nodes start immediately but
-   * stay silent until the master gain is faded up.
+   * Create one generative "voice": a single sine tone whose gain and pitch
+   * are silent by default. dioramaScheduleVoice keeps it drifting in and
+   * out of audibility on its own unhurried, semi-random timetable.
+   */
+  function dioramaCreateVoice(ctx, destination, def) {
+    var gain = ctx.createGain();
+    gain.gain.value = 0;
+    gain.connect(destination);
+    var osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = DIORAMA_SCALE[def.range[0]];
+    osc.connect(gain);
+    osc.start();
+    return {
+      ctx: ctx, osc: osc, gain: gain, range: def.range,
+      minDur: def.minDur, maxDur: def.maxDur, fade: def.fade, peak: def.peak, rest: def.rest,
+      timer: null
+    };
+  }
+
+  /** Queue this voice's next note after a period of silence (its "rest"). */
+  function dioramaScheduleVoice(voice) {
+    clearTimeout(voice.timer);
+    var restSecs = dioramaRandBetween(voice.rest[0], voice.rest[1]);
+    voice.timer = setTimeout(function () { dioramaSoundVoiceNote(voice); }, restSecs * 1000);
+  }
+
+  /** Fade one note in, hold it, fade it back out, then schedule the next rest. Never clicks or jumps. */
+  function dioramaSoundVoiceNote(voice) {
+    var ctx = voice.ctx;
+    var now = ctx.currentTime;
+    var lo = voice.range[0], hi = voice.range[1];
+    var idx = lo + Math.floor(Math.random() * (hi - lo + 1));
+    var freq = DIORAMA_SCALE[idx];
+
+    voice.osc.frequency.setValueAtTime(freq, now); // silent at this instant \u2014 safe to change pitch
+    var hold = dioramaRandBetween(voice.minDur, voice.maxDur);
+    voice.gain.gain.cancelScheduledValues(now);
+    voice.gain.gain.setValueAtTime(0, now);
+    voice.gain.gain.linearRampToValueAtTime(voice.peak, now + voice.fade);
+    voice.gain.gain.setValueAtTime(voice.peak, now + voice.fade + hold);
+    voice.gain.gain.linearRampToValueAtTime(0, now + voice.fade + hold + voice.fade);
+
+    var totalMs = (voice.fade * 2 + hold) * 1000;
+    voice.timer = setTimeout(function () { dioramaScheduleVoice(voice); }, totalMs);
+  }
+
+  /**
+   * Build the ambient graph once: three independent voices drifting through
+   * a pentatonic scale (never in lockstep, never dissonant), a slow-wandering
+   * breath of filtered air, and a shared soft reverb so the whole thing sits
+   * in space rather than sounding synthesised and dry.
    */
   function dioramaBuildAmbientGraph(ctx) {
     var master = ctx.createGain();
     master.gain.value = 0;
     master.connect(ctx.destination);
 
+    var convolver = ctx.createConvolver();
+    convolver.buffer = dioramaCreateImpulseResponse(ctx, 3.2, 2.6);
+    convolver.normalize = true;
+    var reverbReturn = ctx.createGain();
+    reverbReturn.gain.value = 0.55;
+    convolver.connect(reverbReturn);
+    reverbReturn.connect(master);
+    var reverbSend = ctx.createGain();
+    reverbSend.gain.value = 1;
+    reverbSend.connect(convolver);
+
     var padFilter = ctx.createBiquadFilter();
     padFilter.type = 'lowpass';
-    padFilter.frequency.value = 900;
-    padFilter.Q.value = 0.3;
+    padFilter.frequency.value = 1400;
+    padFilter.Q.value = 0.2;
     padFilter.connect(master);
+    padFilter.connect(reverbSend);
+    var padBus = ctx.createGain();
+    padBus.gain.value = 1;
+    padBus.connect(padFilter);
 
-    var padGain = ctx.createGain();
-    padGain.gain.value = 0.05;
-    padGain.connect(padFilter);
+    // Low drone, mid voice, sparse high shimmer \u2014 each with its own tempo
+    var voiceDefs = [
+      { range: [0, 4], minDur: 18, maxDur: 32, fade: 4.0, peak: 0.050, rest: [4, 14] },
+      { range: [2, 7], minDur: 12, maxDur: 20, fade: 3.0, peak: 0.042, rest: [3, 10] },
+      { range: [6, 9], minDur: 6,  maxDur: 12, fade: 2.4, peak: 0.028, rest: [8, 20] }
+    ];
+    var voices = voiceDefs.map(function (def) { return dioramaCreateVoice(ctx, padBus, def); });
+    voices.forEach(function (v) { dioramaScheduleVoice(v); });
 
-    var baseFreqs = [130.81, 164.81, 196.00]; // low C-E-G, calm open triad
-    var oscillators = baseFreqs.map(function (freq, i) {
-      var osc = ctx.createOscillator();
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-      osc.detune.value = (i - 1) * 4; // gentle chorus-like detune, never dissonant
-      var voiceGain = ctx.createGain();
-      voiceGain.gain.value = 1 / baseFreqs.length;
-      osc.connect(voiceGain);
-      voiceGain.connect(padGain);
-      return osc;
-    });
-
-    // Slow LFO breathing the pad's volume in and out (~16s cycle, barely perceptible)
-    var lfo = ctx.createOscillator();
-    lfo.type = 'sine';
-    lfo.frequency.value = 0.06;
-    var lfoGain = ctx.createGain();
-    lfoGain.gain.value = 0.02;
-    lfo.connect(lfoGain);
-    lfoGain.connect(padGain.gain);
-
+    // A breath of air: filtered noise whose cutoff wanders very slowly, like a gentle, changing breeze
     var noiseSource = ctx.createBufferSource();
-    noiseSource.buffer = dioramaCreateNoiseBuffer(ctx, 4);
+    noiseSource.buffer = dioramaCreateNoiseBuffer(ctx, 6);
     noiseSource.loop = true;
     var noiseFilter = ctx.createBiquadFilter();
     noiseFilter.type = 'lowpass';
-    noiseFilter.frequency.value = 500;
+    noiseFilter.frequency.value = 450;
+    noiseFilter.Q.value = 0.4;
+    var noiseLFO = ctx.createOscillator();
+    noiseLFO.type = 'sine';
+    noiseLFO.frequency.value = 0.025; // roughly a 40-second wandering cycle
+    var noiseLFOGain = ctx.createGain();
+    noiseLFOGain.gain.value = 160; // sweeps the filter gently between ~290Hz and ~610Hz
+    noiseLFO.connect(noiseLFOGain);
+    noiseLFOGain.connect(noiseFilter.frequency);
     var noiseGain = ctx.createGain();
-    noiseGain.gain.value = 0.012;
+    noiseGain.gain.value = 0.014;
     noiseSource.connect(noiseFilter);
     noiseFilter.connect(noiseGain);
     noiseGain.connect(master);
+    noiseGain.connect(reverbSend);
 
-    return { master: master, oscillators: oscillators, lfo: lfo, noiseSource: noiseSource };
+    return {
+      master: master, reverbSend: reverbSend, convolver: convolver,
+      voices: voices, noiseSource: noiseSource, noiseLFO: noiseLFO
+    };
   }
 
-  /** Start the ambient graph (idempotent — builds and starts nodes only once). */
+  /** Start the ambient graph (idempotent \u2014 builds and starts nodes only once per page load). */
   function dioramaStartAmbient() {
     var ctx = dioramaGetAudioContext();
     if (!ctx) return; // Web Audio unsupported; ambient sound silently unavailable
     if (ctx.state === 'suspended') ctx.resume().catch(function () {});
     if (!dioramaAudioNodes) {
       dioramaAudioNodes = dioramaBuildAmbientGraph(ctx);
-      dioramaAudioNodes.oscillators.forEach(function (osc) { osc.start(); });
-      dioramaAudioNodes.lfo.start();
       dioramaAudioNodes.noiseSource.start();
+      dioramaAudioNodes.noiseLFO.start();
     }
   }
 
@@ -431,26 +517,36 @@
     g.linearRampToValueAtTime(Math.max(0, target), now + duration);
   }
 
-  /** A soft two-note chime marking a slide change \u2014 quiet, sparse, never jarring. */
-  function dioramaPlayChime() {
+  /**
+   * A single soft singing-bowl-like tone marking a slide change \u2014 one
+   * fundamental plus a quiet, gently inharmonic partial for warmth, heard
+   * mostly through the reverb so it feels distant rather than a "beep".
+   * The note wanders across the same pentatonic scale as the pad, keyed
+   * to the exhibition's position, so it varies but never clashes.
+   */
+  function dioramaPlayChime(sequenceIndex) {
     if (!dioramaSoundEnabled || !dioramaAudioNodes || !dioramaAudioCtx) return;
     var ctx = dioramaAudioCtx;
+    var nodes = dioramaAudioNodes;
     var now = ctx.currentTime;
-    var notes = [523.25, 659.25]; // C5, E5 \u2014 simple, consonant
-    notes.forEach(function (freq, i) {
+    var idx = 4 + ((Number(sequenceIndex) || 0) % 6);
+    var fundamental = DIORAMA_SCALE[Math.min(idx, DIORAMA_SCALE.length - 1)];
+    var partials = [{ mult: 1, level: 0.05 }, { mult: 2.756, level: 0.014 }];
+
+    partials.forEach(function (partial) {
       var osc = ctx.createOscillator();
       osc.type = 'sine';
-      osc.frequency.value = freq;
+      osc.frequency.value = fundamental * partial.mult;
       var g = ctx.createGain();
       g.gain.value = 0;
       osc.connect(g);
-      g.connect(dioramaAudioNodes.master);
-      var start = now + i * 0.14;
-      g.gain.setValueAtTime(0, start);
-      g.gain.linearRampToValueAtTime(0.035, start + 0.05);
-      g.gain.exponentialRampToValueAtTime(0.0001, start + 2.2);
-      osc.start(start);
-      osc.stop(start + 2.3);
+      g.connect(nodes.reverbSend);
+      g.connect(nodes.master);
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(partial.level, now + 0.09);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 5.5);
+      osc.start(now);
+      osc.stop(now + 5.6);
     });
   }
 
@@ -470,11 +566,12 @@
     dioramaSetSoundIcon(dioramaSoundEnabled);
     if (dioramaSoundEnabled) {
       dioramaStartAmbient();
-      if (dioramaPlaying) dioramaFadeAmbientTo(DIORAMA_AMBIENT_LEVEL, 1.2);
+      if (dioramaPlaying) dioramaFadeAmbientTo(DIORAMA_AMBIENT_LEVEL, 1.6);
     } else {
-      dioramaFadeAmbientTo(0, 0.6);
+      dioramaFadeAmbientTo(0, 1.0);
     }
   }
+
 
   /** Artworks in chronological order (earliest first), stable for same-year ties. */
   function dioramaSequence() {
@@ -573,7 +670,7 @@
     if (counterEl) counterEl.textContent = (index + 1) + ' / ' + seq.length;
 
     if (resetTiming) dioramaRemaining = DIORAMA_DURATION;
-    if (resetTiming && dioramaBuilt) dioramaPlayChime();
+    if (resetTiming && dioramaBuilt) dioramaPlayChime(index);
   }
 
   /** Navigate to a specific slide (prev / next / progress-bar click). Always restarts that slide's timing. */
@@ -603,7 +700,7 @@
     dioramaArm();
     if (dioramaSoundEnabled) {
       dioramaStartAmbient();
-      dioramaFadeAmbientTo(DIORAMA_AMBIENT_LEVEL, 1.4);
+      dioramaFadeAmbientTo(DIORAMA_AMBIENT_LEVEL, 2.2);
     }
   }
 
@@ -616,7 +713,7 @@
     document.getElementById('diorama-player').classList.remove('is-playing');
     dioramaSetToggleIcon(false);
     dioramaSetAnimationPauseState(true);
-    dioramaFadeAmbientTo(0, 0.8);
+    dioramaFadeAmbientTo(0, 1.4);
   }
 
   function dioramaTogglePlay() {
