@@ -317,6 +317,165 @@
     dioramaReducedMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   } catch (e) { dioramaReducedMotion = false; }
 
+  // ─── Ambient sound (generative, Web Audio API — no external audio files) ───
+  var DIORAMA_AMBIENT_LEVEL = 0.9; // master gain target when audible
+  var dioramaSoundEnabled = true;  // default on; only actually starts on user gesture (Play)
+  var dioramaAudioCtx = null;
+  var dioramaAudioNodes = null;    // built lazily, started once, then only fades
+
+  /** Lazily create the shared AudioContext. Returns null if unsupported. */
+  function dioramaGetAudioContext() {
+    if (dioramaAudioCtx) return dioramaAudioCtx;
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      dioramaAudioCtx = new AC();
+    } catch (e) { dioramaAudioCtx = null; }
+    return dioramaAudioCtx;
+  }
+
+  /** A soft, warm noise buffer (leaky-integrated white noise) for a whisper of air/texture. */
+  function dioramaCreateNoiseBuffer(ctx, seconds) {
+    var bufferSize = Math.floor(ctx.sampleRate * seconds);
+    var buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    var data = buffer.getChannelData(0);
+    var lastOut = 0;
+    for (var i = 0; i < bufferSize; i++) {
+      var white = Math.random() * 2 - 1;
+      lastOut = (lastOut + 0.02 * white) / 1.02;
+      data[i] = lastOut * 3.5;
+    }
+    return buffer;
+  }
+
+  /**
+   * Build the ambient graph once: a slow-breathing pad of three
+   * detuned low sine tones (a calm open triad) through a warm
+   * lowpass filter, plus a very quiet bed of filtered noise for
+   * texture. Everything is scaled to sit far under speech/attention
+   * level \u2014 a bed, not a soundtrack. Nodes start immediately but
+   * stay silent until the master gain is faded up.
+   */
+  function dioramaBuildAmbientGraph(ctx) {
+    var master = ctx.createGain();
+    master.gain.value = 0;
+    master.connect(ctx.destination);
+
+    var padFilter = ctx.createBiquadFilter();
+    padFilter.type = 'lowpass';
+    padFilter.frequency.value = 900;
+    padFilter.Q.value = 0.3;
+    padFilter.connect(master);
+
+    var padGain = ctx.createGain();
+    padGain.gain.value = 0.05;
+    padGain.connect(padFilter);
+
+    var baseFreqs = [130.81, 164.81, 196.00]; // low C-E-G, calm open triad
+    var oscillators = baseFreqs.map(function (freq, i) {
+      var osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      osc.detune.value = (i - 1) * 4; // gentle chorus-like detune, never dissonant
+      var voiceGain = ctx.createGain();
+      voiceGain.gain.value = 1 / baseFreqs.length;
+      osc.connect(voiceGain);
+      voiceGain.connect(padGain);
+      return osc;
+    });
+
+    // Slow LFO breathing the pad's volume in and out (~16s cycle, barely perceptible)
+    var lfo = ctx.createOscillator();
+    lfo.type = 'sine';
+    lfo.frequency.value = 0.06;
+    var lfoGain = ctx.createGain();
+    lfoGain.gain.value = 0.02;
+    lfo.connect(lfoGain);
+    lfoGain.connect(padGain.gain);
+
+    var noiseSource = ctx.createBufferSource();
+    noiseSource.buffer = dioramaCreateNoiseBuffer(ctx, 4);
+    noiseSource.loop = true;
+    var noiseFilter = ctx.createBiquadFilter();
+    noiseFilter.type = 'lowpass';
+    noiseFilter.frequency.value = 500;
+    var noiseGain = ctx.createGain();
+    noiseGain.gain.value = 0.012;
+    noiseSource.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(master);
+
+    return { master: master, oscillators: oscillators, lfo: lfo, noiseSource: noiseSource };
+  }
+
+  /** Start the ambient graph (idempotent — builds and starts nodes only once). */
+  function dioramaStartAmbient() {
+    var ctx = dioramaGetAudioContext();
+    if (!ctx) return; // Web Audio unsupported; ambient sound silently unavailable
+    if (ctx.state === 'suspended') ctx.resume().catch(function () {});
+    if (!dioramaAudioNodes) {
+      dioramaAudioNodes = dioramaBuildAmbientGraph(ctx);
+      dioramaAudioNodes.oscillators.forEach(function (osc) { osc.start(); });
+      dioramaAudioNodes.lfo.start();
+      dioramaAudioNodes.noiseSource.start();
+    }
+  }
+
+  /** Smoothly fade the ambient bed to a target level (click-free via linear ramp). */
+  function dioramaFadeAmbientTo(target, duration) {
+    if (!dioramaAudioNodes || !dioramaAudioCtx) return;
+    var g = dioramaAudioNodes.master.gain;
+    var now = dioramaAudioCtx.currentTime;
+    g.cancelScheduledValues(now);
+    g.setValueAtTime(g.value, now);
+    g.linearRampToValueAtTime(Math.max(0, target), now + duration);
+  }
+
+  /** A soft two-note chime marking a slide change \u2014 quiet, sparse, never jarring. */
+  function dioramaPlayChime() {
+    if (!dioramaSoundEnabled || !dioramaAudioNodes || !dioramaAudioCtx) return;
+    var ctx = dioramaAudioCtx;
+    var now = ctx.currentTime;
+    var notes = [523.25, 659.25]; // C5, E5 \u2014 simple, consonant
+    notes.forEach(function (freq, i) {
+      var osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      var g = ctx.createGain();
+      g.gain.value = 0;
+      osc.connect(g);
+      g.connect(dioramaAudioNodes.master);
+      var start = now + i * 0.14;
+      g.gain.setValueAtTime(0, start);
+      g.gain.linearRampToValueAtTime(0.035, start + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, start + 2.2);
+      osc.start(start);
+      osc.stop(start + 2.3);
+    });
+  }
+
+  function dioramaSetSoundIcon(enabled) {
+    var btn = document.getElementById('diorama-sound-toggle');
+    if (!btn) return;
+    var onIcon = btn.querySelector('[data-role="sound-on-icon"]');
+    var offIcon = btn.querySelector('[data-role="sound-off-icon"]');
+    if (onIcon) onIcon.classList.toggle('hidden', !enabled);
+    if (offIcon) offIcon.classList.toggle('hidden', enabled);
+    btn.setAttribute('aria-pressed', String(enabled));
+    btn.setAttribute('aria-label', enabled ? 'Mute ambient sound' : 'Enable ambient sound');
+  }
+
+  function dioramaToggleSound() {
+    dioramaSoundEnabled = !dioramaSoundEnabled;
+    dioramaSetSoundIcon(dioramaSoundEnabled);
+    if (dioramaSoundEnabled) {
+      dioramaStartAmbient();
+      if (dioramaPlaying) dioramaFadeAmbientTo(DIORAMA_AMBIENT_LEVEL, 1.2);
+    } else {
+      dioramaFadeAmbientTo(0, 0.6);
+    }
+  }
+
   /** Artworks in chronological order (earliest first), stable for same-year ties. */
   function dioramaSequence() {
     if (dioramaSequenceCache) return dioramaSequenceCache;
@@ -414,6 +573,7 @@
     if (counterEl) counterEl.textContent = (index + 1) + ' / ' + seq.length;
 
     if (resetTiming) dioramaRemaining = DIORAMA_DURATION;
+    if (resetTiming && dioramaBuilt) dioramaPlayChime();
   }
 
   /** Navigate to a specific slide (prev / next / progress-bar click). Always restarts that slide's timing. */
@@ -441,6 +601,10 @@
     dioramaSetToggleIcon(true);
     dioramaSetAnimationPauseState(false);
     dioramaArm();
+    if (dioramaSoundEnabled) {
+      dioramaStartAmbient();
+      dioramaFadeAmbientTo(DIORAMA_AMBIENT_LEVEL, 1.4);
+    }
   }
 
   function dioramaPause() {
@@ -452,6 +616,7 @@
     document.getElementById('diorama-player').classList.remove('is-playing');
     dioramaSetToggleIcon(false);
     dioramaSetAnimationPauseState(true);
+    dioramaFadeAmbientTo(0, 0.8);
   }
 
   function dioramaTogglePlay() {
@@ -494,6 +659,8 @@
     document.getElementById('diorama-next').addEventListener('click', function () { dioramaGoTo(dioramaIndex + 1); });
     document.getElementById('diorama-toggle').addEventListener('click', dioramaTogglePlay);
     document.getElementById('diorama-poster-btn').addEventListener('click', dioramaPlay);
+    document.getElementById('diorama-sound-toggle').addEventListener('click', dioramaToggleSound);
+    dioramaSetSoundIcon(dioramaSoundEnabled);
 
     // Delegated click for the "View full details" link inside the caption.
     // Caption HTML is replaced on every slide change, so binding on the
@@ -518,6 +685,7 @@
       if (e.code === 'Space') { e.preventDefault(); dioramaTogglePlay(); }
       else if (e.code === 'ArrowRight') { dioramaGoTo(dioramaIndex + 1); }
       else if (e.code === 'ArrowLeft') { dioramaGoTo(dioramaIndex - 1); }
+      else if (e.code === 'KeyM') { dioramaToggleSound(); }
     });
 
     dioramaShowSlide(0, true);
