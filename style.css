@@ -920,153 +920,221 @@ main { position: relative; z-index: 10; }
   html { scroll-behavior: auto; }
 }
 
-/* ─── DIORAMA (chronological exhibition timeline) ──────────── */
-.diorama {
-  position: relative;
+/* ─── DIORAMA (animated exhibition walkthrough / video simulation) ─── */
+.diorama-player {
   max-width: var(--container-max);
   margin: 0 auto;
   padding: 0 1.5rem;
 }
 
-/* Center spine line */
-.diorama::before {
-  content: '';
-  position: absolute;
-  left: 1.5rem;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: linear-gradient(to bottom, transparent, rgba(26,20,16,0.18) 4%, rgba(26,20,16,0.18) 96%, transparent);
-}
-
-.diorama-year-block {
-  position: relative;
-  padding-left: 3.5rem;
-  margin-bottom: 6rem;
-}
-.diorama-year-block:last-child { margin-bottom: 0; }
-
-/* Year marker node on the spine */
-.diorama-year-marker {
-  position: absolute;
-  left: 0;
-  top: 0.1rem;
-  width: 3rem;
+/* "Stories"-style segmented progress bar, one segment per artwork */
+.diorama-progress {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
 }
-.diorama-year-dot {
-  width: 0.6rem;
-  height: 0.6rem;
+.diorama-progress-seg {
+  flex: 1;
+  height: 3px;
   border-radius: 9999px;
-  background: var(--ochre-500);
-  box-shadow: 0 0 0 5px var(--parchment-100), 0 0 0 6px rgba(26,20,16,0.12);
-  position: relative;
-  z-index: 2;
-}
-
-.diorama-year-label {
-  display: flex;
-  align-items: baseline;
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-.diorama-year-label .num {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-weight: 300;
-  font-size: 2.75rem;
-  color: var(--umber-800);
-  line-height: 1;
-}
-.diorama-year-label .count {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--dusk-500);
-}
-
-.diorama-works {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 3rem;
-}
-
-/* Each work: image + caption panel, like a museum wall placard */
-.diorama-work {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-  align-items: center;
-  text-decoration: none;
-  color: inherit;
-}
-.diorama-work-frame {
-  position: relative;
-  aspect-ratio: 4 / 3;
+  background: rgba(26, 20, 16, 0.15);
   overflow: hidden;
-  background: var(--parchment-200);
-  box-shadow: 0 30px 60px -30px rgba(26,20,16,0.35);
+  position: relative;
+  cursor: pointer;
+  border: none;
+  padding: 0;
 }
-.diorama-work-frame img {
+.diorama-progress-seg .fill {
+  position: absolute;
+  inset: 0;
+  width: 0%;
+  background: var(--ochre-500);
+}
+.diorama-progress-seg.is-complete .fill { width: 100%; }
+.diorama-progress-seg.is-current .fill {
+  animation: dioramaFill var(--slide-duration, 7s) linear forwards;
+}
+.diorama-progress-seg.is-current.is-paused .fill { animation-play-state: paused; }
+
+@keyframes dioramaFill {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+
+/* Cinema stage */
+.diorama-stage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: var(--umber-900);
+  overflow: hidden;
+  border-radius: 6px;
+}
+.diorama-stage-images { position: absolute; inset: 0; }
+.diorama-stage-img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 1.6s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0;
+  transition: opacity 1s ease;
 }
-.diorama-work:hover .diorama-work-frame img { transform: scale(1.045); }
+.diorama-stage-img.is-active {
+  opacity: 1;
+  animation: dioramaKenBurns var(--slide-duration, 7s) linear forwards;
+}
+.diorama-stage-img.is-active.is-paused { animation-play-state: paused; }
 
-.diorama-work-caption { padding: 0.25rem 0; }
-.diorama-work-caption .painter {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  color: var(--dusk-500);
+@keyframes dioramaKenBurns {
+  from { transform: scale(1) translate(0, 0); }
+  to   { transform: scale(1.09) translate(-1.2%, -1.2%); }
 }
-.diorama-work-caption h3 {
+
+.diorama-stage-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(14, 10, 8, 0.88), rgba(14, 10, 8, 0.1) 42%, transparent 62%);
+  pointer-events: none;
+}
+
+/* Lower-third caption, documentary style */
+.diorama-caption {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  padding: 1.25rem 1.5rem 1.5rem;
+  color: var(--parchment-100);
+}
+.diorama-caption .room {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: rgba(245, 239, 228, 0.65);
+}
+.diorama-caption .year {
   font-family: var(--font-display);
   font-style: italic;
-  font-size: 1.75rem;
-  color: var(--umber-800);
-  margin-top: 0.4rem;
-  line-height: 1.2;
+  font-weight: 300;
+  font-size: 1.1rem;
+  color: rgba(245, 239, 228, 0.8);
+  margin-top: 0.15rem;
 }
-.diorama-work-caption .details {
-  font-size: 0.75rem;
-  color: var(--umber-500);
+.diorama-caption h3 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  margin-top: 0.2rem;
+  line-height: 1.15;
+}
+.diorama-caption .meta {
+  font-size: 0.7rem;
+  color: rgba(245, 239, 228, 0.7);
+  margin-top: 0.35rem;
   letter-spacing: 0.02em;
-  margin-top: 0.5rem;
 }
-.diorama-work-caption .excerpt {
-  margin-top: 0.9rem;
-  font-size: 0.9375rem;
-  line-height: 1.65;
-  color: var(--umber-600);
-  max-width: 34rem;
+.diorama-caption .excerpt {
+  display: none;
+  margin-top: 0.6rem;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: rgba(245, 239, 228, 0.85);
+  max-width: 32rem;
+}
+.diorama-caption .view-link {
+  display: inline-flex;
+  margin-top: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ochre-400);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(212, 166, 74, 0.4);
+  padding-bottom: 2px;
+}
+.diorama-caption .view-link:hover { color: var(--parchment-100); }
+
+/* Poster / play overlay (shown before playback starts, like a video thumbnail) */
+.diorama-poster-btn {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(14, 10, 8, 0.22);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+.diorama-poster-circle {
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 9999px;
+  background: rgba(245, 239, 228, 0.94);
+  display: grid;
+  place-items: center;
+  color: var(--umber-800);
+  box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.55);
+  transition: transform 0.25s ease;
+}
+.diorama-poster-btn:hover .diorama-poster-circle { transform: scale(1.07); }
+.diorama-poster-circle svg { margin-left: 3px; } /* optical centering for play triangle */
+.diorama-player.is-playing .diorama-poster-btn { display: none; }
+
+/* Transport controls */
+.diorama-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.diorama-ctrl-btn {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 1px solid rgba(26, 20, 16, 0.2);
+  color: var(--umber-700);
+  cursor: pointer;
+  transition: border-color 0.25s, color 0.25s;
+  padding: 0;
+}
+.diorama-ctrl-btn:hover { border-color: rgba(26, 20, 16, 0.5); }
+.diorama-ctrl-btn-main {
+  width: 3rem;
+  height: 3rem;
+  background: var(--umber-800);
+  color: var(--parchment-100);
+  border: none;
+  position: relative;
+}
+.diorama-ctrl-btn-main:hover { background: var(--umber-700); }
+.diorama-ctrl-btn-main svg { position: absolute; }
+.diorama-counter {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  color: var(--umber-500);
+}
+
+@media (min-width: 640px) {
+  .diorama-caption .excerpt { display: block; }
 }
 
 @media (min-width: 768px) {
-  .diorama-work {
-    grid-template-columns: 1.4fr 1fr;
-    gap: 3rem;
-  }
-  .diorama-work:nth-child(even) { grid-template-columns: 1fr 1.4fr; }
-  .diorama-work:nth-child(even) .diorama-work-frame { order: 2; }
-  .diorama-work:nth-child(even) .diorama-work-caption { order: 1; text-align: right; }
-  .diorama-work:nth-child(even) .diorama-work-caption .excerpt { margin-left: auto; }
+  .diorama-caption { padding: 2rem 2.5rem 2.5rem; }
+  .diorama-caption h3 { font-size: 2rem; }
+  .diorama-caption .year { font-size: 1.35rem; }
 }
 
-@media (min-width: 1024px) {
-  .diorama::before { left: 2.5rem; }
-  .diorama-year-block { padding-left: 6rem; }
-  .diorama-year-marker { left: 0.85rem; width: 3.3rem; }
-  .diorama-year-label .num { font-size: 3.5rem; }
+/* Reduced motion: keep the crossfade, drop the pan/zoom */
+@media (prefers-reduced-motion: reduce) {
+  .diorama-stage-img.is-active { animation: none !important; }
+  .diorama-progress-seg.is-current .fill { animation: none !important; width: 100%; }
 }
+
 
 /* ─── ICONS (inline SVG; no Lucide CDN needed) ─────────────── */
 .icon {
@@ -1082,6 +1150,7 @@ main { position: relative; z-index: 10; }
 }
 .icon-lg { width: 1.25rem; height: 1.25rem; }
 .icon-sm { width: 0.75rem; height: 0.75rem; }
+.icon-fill { fill: currentColor; stroke: none; }
 
 /* ─── RESPONSIVE: sm (640px) ───────────────────────────────── */
 @media (min-width: 640px) {
