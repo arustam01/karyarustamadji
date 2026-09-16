@@ -920,6 +920,154 @@ main { position: relative; z-index: 10; }
   html { scroll-behavior: auto; }
 }
 
+/* ─── DIORAMA (chronological exhibition timeline) ──────────── */
+.diorama {
+  position: relative;
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* Center spine line */
+.diorama::before {
+  content: '';
+  position: absolute;
+  left: 1.5rem;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, rgba(26,20,16,0.18) 4%, rgba(26,20,16,0.18) 96%, transparent);
+}
+
+.diorama-year-block {
+  position: relative;
+  padding-left: 3.5rem;
+  margin-bottom: 6rem;
+}
+.diorama-year-block:last-child { margin-bottom: 0; }
+
+/* Year marker node on the spine */
+.diorama-year-marker {
+  position: absolute;
+  left: 0;
+  top: 0.1rem;
+  width: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.diorama-year-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 9999px;
+  background: var(--ochre-500);
+  box-shadow: 0 0 0 5px var(--parchment-100), 0 0 0 6px rgba(26,20,16,0.12);
+  position: relative;
+  z-index: 2;
+}
+
+.diorama-year-label {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.diorama-year-label .num {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 300;
+  font-size: 2.75rem;
+  color: var(--umber-800);
+  line-height: 1;
+}
+.diorama-year-label .count {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--dusk-500);
+}
+
+.diorama-works {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3rem;
+}
+
+/* Each work: image + caption panel, like a museum wall placard */
+.diorama-work {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+}
+.diorama-work-frame {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--parchment-200);
+  box-shadow: 0 30px 60px -30px rgba(26,20,16,0.35);
+}
+.diorama-work-frame img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 1.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.diorama-work:hover .diorama-work-frame img { transform: scale(1.045); }
+
+.diorama-work-caption { padding: 0.25rem 0; }
+.diorama-work-caption .painter {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--dusk-500);
+}
+.diorama-work-caption h3 {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.75rem;
+  color: var(--umber-800);
+  margin-top: 0.4rem;
+  line-height: 1.2;
+}
+.diorama-work-caption .details {
+  font-size: 0.75rem;
+  color: var(--umber-500);
+  letter-spacing: 0.02em;
+  margin-top: 0.5rem;
+}
+.diorama-work-caption .excerpt {
+  margin-top: 0.9rem;
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: var(--umber-600);
+  max-width: 34rem;
+}
+
+@media (min-width: 768px) {
+  .diorama-work {
+    grid-template-columns: 1.4fr 1fr;
+    gap: 3rem;
+  }
+  .diorama-work:nth-child(even) { grid-template-columns: 1fr 1.4fr; }
+  .diorama-work:nth-child(even) .diorama-work-frame { order: 2; }
+  .diorama-work:nth-child(even) .diorama-work-caption { order: 1; text-align: right; }
+  .diorama-work:nth-child(even) .diorama-work-caption .excerpt { margin-left: auto; }
+}
+
+@media (min-width: 1024px) {
+  .diorama::before { left: 2.5rem; }
+  .diorama-year-block { padding-left: 6rem; }
+  .diorama-year-marker { left: 0.85rem; width: 3.3rem; }
+  .diorama-year-label .num { font-size: 3.5rem; }
+}
+
 /* ─── ICONS (inline SVG; no Lucide CDN needed) ─────────────── */
 .icon {
   display: inline-block;
