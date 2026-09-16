@@ -48,9 +48,9 @@
   // ─── CONFIG ──────────────────────────────────────────────────
 
   var CONFIG = {
-    phone:    '+62816-4264-397',
+    phone:    '+62-812-3456-7890',
     email:    'archive@rustamadji.id',
-    whatsapp: '628164264397'
+    whatsapp: '6281234567890'
   };
 
   var PORTRAIT = 'images/rustamadji-portrait.png';
@@ -71,7 +71,7 @@
         "Rustamadji was born on 19 January 1921 in Klaten, a regency in Central Java situated between the slopes of Mount Merapi and the cultural heart of Surakarta. The light, the rice fields, and the volcanic ridges of his birthplace would become recurring subjects throughout a lifetime of painting.",
         "Working firmly within the tradition of realism, Rustamadji devoted himself to observed truth — figures rendered with anatomical precision, landscapes built from patient layers of oil, and portraits that read like quiet biographies. He refused the shortcuts of stylisation; every brushstroke had to answer to nature.",
         "His life and work are documented in the monograph \"Meniti Bumi, Rustamadji Klaten / Walking the Earth, Rustamadji Klaten\", which traces his journey across Java and the friendships and apprenticeships that shaped his eye.",
-        "Rustamadji raised two sons who became painters in their own right — Bodas Erlangga and Karang Sasangka — extending the family's commitment to disciplined, observation-led painting into a second generation."
+        "Rustamadji raised two sons who became painters in their own right — Bodas Erlangga and Karang Sasongko — extending the family's commitment to disciplined, observation-led painting into a second generation."
       ]
     },
     {
@@ -91,8 +91,8 @@
       ]
     },
     {
-      slug: 'karang-sasangka',
-      name: 'Karang Sasangka',
+      slug: 'karang-sasongko',
+      name: 'Karang Sasongko',
       role: 'Painter',
       movement: 'Realism',
       bornPlace: 'Klaten, Central Java',
@@ -101,7 +101,7 @@
       color: '#3f2e22',
       shortBio: "Son of Rustamadji. A realist with a sculptural sense of form \u2014 figures, horses, and the working life of Central Java.",
       bio: [
-        "Karang Sasangka studied painting under his father from childhood, then continued formally at art academies in Java. Where his older brother turned to atmosphere, Karang gravitated to form: muscled animals, working figures, the architecture of the human body in motion.",
+        "Karang Sasongko studied painting under his father from childhood, then continued formally at art academies in Java. Where his older brother turned to atmosphere, Karang gravitated to form: muscled animals, working figures, the architecture of the human body in motion.",
         "His canvases are built from dense layers of oil and an almost sculptural sense of edge. Horses, fishermen, and farmers recur as motifs \u2014 figures who, like his father's subjects, are observed rather than staged.",
         "Karang lives and works in Klaten, continuing the family studio tradition."
       ]
@@ -302,6 +302,70 @@
     document.getElementById('family-grid').innerHTML = kids.map(function (p, i) { return cardArtist(p, i); }).join('');
   }
 
+  /**
+   * Truncate a description to a short excerpt at a word boundary.
+   * Used for diorama wall-placard captions (full text stays on artwork detail page).
+   */
+  function excerpt(text, maxLen) {
+    var s = String(text || '');
+    if (s.length <= maxLen) return s;
+    var cut = s.slice(0, maxLen);
+    var lastSpace = cut.lastIndexOf(' ');
+    if (lastSpace > 0) cut = cut.slice(0, lastSpace);
+    return cut + '\u2026';
+  }
+
+  function dioramaWork(a) {
+    var artist = artistBySlug(a.artist);
+    return '<a href="#" data-artwork="' + escapeAttr(a.slug) + '" class="diorama-work">' +
+      '<div class="diorama-work-frame">' +
+        '<img src="' + escapeAttr(artworkImage(a)) + '" alt="' + escapeAttr(a.title + ', ' + a.year) + '" loading="lazy" referrerpolicy="no-referrer" />' +
+      '</div>' +
+      '<div class="diorama-work-caption">' +
+        '<p class="painter">' + escapeHTML(artist ? artist.name : '') + '</p>' +
+        '<h3>' + escapeHTML(a.title) + '</h3>' +
+        '<p class="details">' + escapeHTML(a.medium) + ' \u00b7 ' + escapeHTML(a.dimensions) + '</p>' +
+        '<p class="excerpt">' + escapeHTML(excerpt(a.description, 180)) + '</p>' +
+      '</div>' +
+    '</a>';
+  }
+
+  /**
+   * Render the digital diorama: a chronological exhibition walk.
+   * Groups all artworks by year (ascending, earliest first — as if
+   * walking into the exhibition at its opening room) and renders
+   * one "room" per year with a spine marker.
+   */
+  function renderDiorama() {
+    var byYear = {};
+    var years = [];
+    for (var i = 0; i < ARTWORKS.length; i++) {
+      var a = ARTWORKS[i];
+      var y = String(a.year);
+      if (!byYear[y]) { byYear[y] = []; years.push(y); }
+      byYear[y].push(a);
+    }
+    years.sort(function (x, y) { return Number(x) - Number(y); });
+
+    var html = years.map(function (y) {
+      var works = byYear[y];
+      var count = works.length + ' ' + (works.length === 1 ? 'work' : 'works');
+      return '<div class="diorama-year-block">' +
+        '<span class="diorama-year-marker" aria-hidden="true"><span class="diorama-year-dot"></span></span>' +
+        '<div class="diorama-year-label">' +
+          '<span class="num">' + escapeHTML(y) + '</span>' +
+          '<span class="count">' + escapeHTML(count) + '</span>' +
+        '</div>' +
+        '<div class="diorama-works">' +
+          works.map(dioramaWork).join('') +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    document.getElementById('diorama-timeline').innerHTML = html;
+    attachCardLinks();
+  }
+
   function renderArtist(slug) {
     var a = artistBySlug(slug);
     if (!a) return;
@@ -420,7 +484,7 @@
 
   // ─── ROUTING (allowlist) ────────────────────────────────────
 
-  var VALID_VIEWS = ['home', 'biography', 'gallery', 'family', 'artist', 'artwork', 'contact'];
+  var VALID_VIEWS = ['home', 'biography', 'gallery', 'diorama', 'family', 'artist', 'artwork', 'contact'];
 
   function showView(name) {
     if (VALID_VIEWS.indexOf(name) === -1) return;
@@ -440,6 +504,7 @@
     document.getElementById('mobile-menu').classList.remove('is-open');
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (name === 'gallery') renderGallery();
+    if (name === 'diorama') renderDiorama();
     if (name === 'family')  renderFamily();
   }
 
