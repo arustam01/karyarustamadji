@@ -302,10 +302,32 @@
     document.getElementById('family-grid').innerHTML = kids.map(function (p, i) { return cardArtist(p, i); }).join('');
   }
 
-  /**
-   * Truncate a description to a short excerpt at a word boundary.
-   * Used for diorama wall-placard captions (full text stays on artwork detail page).
-   */
+  /* ─── DIORAMA (animated exhibition walkthrough / video simulation) ─── */
+
+  var DIORAMA_DURATION = 7000; // ms each slide plays before auto-advancing
+  var dioramaSequenceCache = null;
+  var dioramaBuilt = false;
+  var dioramaIndex = 0;
+  var dioramaPlaying = false;
+  var dioramaTimer = null;
+  var dioramaSlideStart = 0;
+  var dioramaRemaining = DIORAMA_DURATION;
+  var dioramaReducedMotion = false;
+  try {
+    dioramaReducedMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  } catch (e) { dioramaReducedMotion = false; }
+
+  /** Artworks in chronological order (earliest first), stable for same-year ties. */
+  function dioramaSequence() {
+    if (dioramaSequenceCache) return dioramaSequenceCache;
+    dioramaSequenceCache = ARTWORKS
+      .map(function (a, i) { return { a: a, i: i }; })
+      .sort(function (x, y) { return (x.a.year - y.a.year) || (x.i - y.i); })
+      .map(function (o) { return o.a; });
+    return dioramaSequenceCache;
+  }
+
+  /** Truncate text to a short excerpt at a word boundary. */
   function excerpt(text, maxLen) {
     var s = String(text || '');
     if (s.length <= maxLen) return s;
@@ -315,55 +337,196 @@
     return cut + '\u2026';
   }
 
-  function dioramaWork(a) {
+  function dioramaCaptionHTML(a, index, total) {
     var artist = artistBySlug(a.artist);
-    return '<a href="#" data-artwork="' + escapeAttr(a.slug) + '" class="diorama-work">' +
-      '<div class="diorama-work-frame">' +
-        '<img src="' + escapeAttr(artworkImage(a)) + '" alt="' + escapeAttr(a.title + ', ' + a.year) + '" loading="lazy" referrerpolicy="no-referrer" />' +
-      '</div>' +
-      '<div class="diorama-work-caption">' +
-        '<p class="painter">' + escapeHTML(artist ? artist.name : '') + '</p>' +
-        '<h3>' + escapeHTML(a.title) + '</h3>' +
-        '<p class="details">' + escapeHTML(a.medium) + ' \u00b7 ' + escapeHTML(a.dimensions) + '</p>' +
-        '<p class="excerpt">' + escapeHTML(excerpt(a.description, 180)) + '</p>' +
-      '</div>' +
-    '</a>';
+    return '<p class="room">Room ' + (index + 1) + ' of ' + total + '</p>' +
+      '<p class="year">' + escapeHTML(a.year) + '</p>' +
+      '<h3>' + escapeHTML(a.title) + '</h3>' +
+      '<p class="meta">' + escapeHTML(artist ? artist.name : '') + ' \u00b7 ' + escapeHTML(a.medium) + ' \u00b7 ' + escapeHTML(a.dimensions) + '</p>' +
+      '<p class="excerpt">' + escapeHTML(excerpt(a.description, 150)) + '</p>' +
+      '<a href="#" class="view-link" data-artwork="' + escapeAttr(a.slug) + '">View full details \u2192</a>';
+  }
+
+  function dioramaSetToggleIcon(isPlaying) {
+    var toggle = document.getElementById('diorama-toggle');
+    if (!toggle) return;
+    var playIcon = toggle.querySelector('[data-role="play-icon"]');
+    var pauseIcon = toggle.querySelector('[data-role="pause-icon"]');
+    if (playIcon) playIcon.classList.toggle('hidden', isPlaying);
+    if (pauseIcon) pauseIcon.classList.toggle('hidden', !isPlaying);
+    toggle.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play');
+  }
+
+  /** Pause (or resume) the CSS-driven Ken Burns pan and progress-fill animations. */
+  function dioramaSetAnimationPauseState(paused) {
+    var activeImg = document.querySelector('.diorama-stage-img.is-active');
+    if (activeImg) activeImg.classList.toggle('is-paused', paused);
+    var curSeg = document.querySelector('.diorama-progress-seg.is-current');
+    if (curSeg) curSeg.classList.toggle('is-paused', paused);
   }
 
   /**
-   * Render the digital diorama: a chronological exhibition walk.
-   * Groups all artworks by year (ascending, earliest first — as if
-   * walking into the exhibition at its opening room) and renders
-   * one "room" per year with a spine marker.
+   * Update the DOM to display a given slide index. Playback state
+   * (timers, playing flag) is left untouched here so this can be
+   * reused by both manual navigation and autoplay advance.
    */
-  function renderDiorama() {
-    var byYear = {};
-    var years = [];
-    for (var i = 0; i < ARTWORKS.length; i++) {
-      var a = ARTWORKS[i];
-      var y = String(a.year);
-      if (!byYear[y]) { byYear[y] = []; years.push(y); }
-      byYear[y].push(a);
+  function dioramaShowSlide(index, resetTiming) {
+    var seq = dioramaSequence();
+    if (index < 0) index = seq.length - 1;
+    if (index >= seq.length) index = 0;
+    dioramaIndex = index;
+
+    var imgs = document.querySelectorAll('.diorama-stage-img');
+    for (var i = 0; i < imgs.length; i++) {
+      var idx = parseInt(imgs[i].getAttribute('data-index'), 10);
+      var isActive = idx === index;
+      imgs[i].classList.toggle('is-active', isActive);
+      imgs[i].classList.remove('is-paused');
+      if (isActive && resetTiming) {
+        imgs[i].style.animation = 'none';
+        void imgs[i].offsetWidth;
+        imgs[i].style.animation = '';
+      }
     }
-    years.sort(function (x, y) { return Number(x) - Number(y); });
 
-    var html = years.map(function (y) {
-      var works = byYear[y];
-      var count = works.length + ' ' + (works.length === 1 ? 'work' : 'works');
-      return '<div class="diorama-year-block">' +
-        '<span class="diorama-year-marker" aria-hidden="true"><span class="diorama-year-dot"></span></span>' +
-        '<div class="diorama-year-label">' +
-          '<span class="num">' + escapeHTML(y) + '</span>' +
-          '<span class="count">' + escapeHTML(count) + '</span>' +
-        '</div>' +
-        '<div class="diorama-works">' +
-          works.map(dioramaWork).join('') +
-        '</div>' +
-      '</div>';
+    var segs = document.querySelectorAll('#diorama-progress .diorama-progress-seg');
+    for (var s = 0; s < segs.length; s++) {
+      var segIdx = parseInt(segs[s].getAttribute('data-index'), 10);
+      var fill = segs[s].querySelector('.fill');
+      segs[s].classList.remove('is-complete', 'is-current', 'is-paused');
+      if (segIdx < index) {
+        fill.style.animation = 'none';
+        segs[s].classList.add('is-complete');
+      } else if (segIdx === index) {
+        segs[s].classList.add('is-current');
+        if (resetTiming) {
+          fill.style.animation = 'none';
+          void fill.offsetWidth;
+          fill.style.animation = '';
+        }
+      } else {
+        fill.style.animation = 'none';
+      }
+    }
+
+    document.getElementById('diorama-caption').innerHTML = dioramaCaptionHTML(seq[index], index, seq.length);
+    var counterEl = document.getElementById('diorama-counter');
+    if (counterEl) counterEl.textContent = (index + 1) + ' / ' + seq.length;
+
+    if (resetTiming) dioramaRemaining = DIORAMA_DURATION;
+  }
+
+  /** Navigate to a specific slide (prev / next / progress-bar click). Always restarts that slide's timing. */
+  function dioramaGoTo(index) {
+    clearTimeout(dioramaTimer);
+    dioramaShowSlide(index, true);
+    dioramaSetAnimationPauseState(!dioramaPlaying);
+    if (dioramaPlaying) dioramaArm();
+  }
+
+  /** Arm the autoplay timer for the current remaining duration on this slide. */
+  function dioramaArm() {
+    clearTimeout(dioramaTimer);
+    dioramaSlideStart = Date.now();
+    dioramaTimer = setTimeout(function () {
+      dioramaShowSlide(dioramaIndex + 1, true);
+      dioramaArm();
+    }, dioramaRemaining);
+  }
+
+  function dioramaPlay() {
+    if (!dioramaBuilt) return;
+    dioramaPlaying = true;
+    document.getElementById('diorama-player').classList.add('is-playing');
+    dioramaSetToggleIcon(true);
+    dioramaSetAnimationPauseState(false);
+    dioramaArm();
+  }
+
+  function dioramaPause() {
+    if (!dioramaPlaying) return;
+    dioramaPlaying = false;
+    var elapsed = Date.now() - dioramaSlideStart;
+    dioramaRemaining = Math.max(300, dioramaRemaining - elapsed);
+    clearTimeout(dioramaTimer);
+    document.getElementById('diorama-player').classList.remove('is-playing');
+    dioramaSetToggleIcon(false);
+    dioramaSetAnimationPauseState(true);
+  }
+
+  function dioramaTogglePlay() {
+    if (dioramaPlaying) dioramaPause(); else dioramaPlay();
+  }
+
+  /**
+   * Build the diorama player DOM once: progress segments and stage
+   * images for every artwork, plus all listeners. The underlying
+   * data never changes, so rebuilding on repeat visits is unnecessary
+   * \u2014 revisiting the view just resumes from wherever playback was left.
+   */
+  function buildDioramaPlayer() {
+    var seq = dioramaSequence();
+
+    var progressHTML = seq.map(function (a, i) {
+      return '<button type="button" class="diorama-progress-seg" data-index="' + i + '" role="tab" aria-label="' +
+        escapeAttr('Jump to ' + a.title + ', ' + a.year) + '"><span class="fill"></span></button>';
     }).join('');
+    document.getElementById('diorama-progress').innerHTML = progressHTML;
 
-    document.getElementById('diorama-timeline').innerHTML = html;
-    attachCardLinks();
+    var imagesHTML = seq.map(function (a, i) {
+      return '<img class="diorama-stage-img" data-index="' + i + '" src="' + escapeAttr(artworkImage(a)) +
+        '" alt="' + escapeAttr(a.title + ', ' + a.year) + '" referrerpolicy="no-referrer" loading="' + (i === 0 ? 'eager' : 'lazy') + '" />';
+    }).join('');
+    document.getElementById('diorama-stage-images').innerHTML = imagesHTML;
+
+    var playerEl = document.getElementById('diorama-player');
+    playerEl.style.setProperty('--slide-duration', (DIORAMA_DURATION / 1000) + 's');
+
+    var segs = document.querySelectorAll('#diorama-progress .diorama-progress-seg');
+    for (var s = 0; s < segs.length; s++) {
+      segs[s].addEventListener('click', function () {
+        var idx = parseInt(this.getAttribute('data-index'), 10);
+        if (!isNaN(idx)) dioramaGoTo(idx);
+      });
+    }
+
+    document.getElementById('diorama-prev').addEventListener('click', function () { dioramaGoTo(dioramaIndex - 1); });
+    document.getElementById('diorama-next').addEventListener('click', function () { dioramaGoTo(dioramaIndex + 1); });
+    document.getElementById('diorama-toggle').addEventListener('click', dioramaTogglePlay);
+    document.getElementById('diorama-poster-btn').addEventListener('click', dioramaPlay);
+
+    // Delegated click for the "View full details" link inside the caption.
+    // Caption HTML is replaced on every slide change, so binding on the
+    // persistent parent avoids re-attaching (and leaking) a listener per slide.
+    document.getElementById('diorama-caption').addEventListener('click', function (e) {
+      var linkEl = e.target.closest('[data-artwork]');
+      if (!linkEl) return;
+      e.preventDefault();
+      var slug = safeSlug(linkEl.getAttribute('data-artwork'));
+      if (!slug) return;
+      dioramaPause();
+      renderArtwork(slug);
+      showView('artwork');
+    });
+
+    // Keyboard transport, scoped to only fire while the diorama view is active
+    document.addEventListener('keydown', function (e) {
+      var view = document.querySelector('[data-view-target="diorama"]');
+      if (!view || !view.classList.contains('is-active')) return;
+      var tag = (e.target && e.target.tagName) || '';
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (e.code === 'Space') { e.preventDefault(); dioramaTogglePlay(); }
+      else if (e.code === 'ArrowRight') { dioramaGoTo(dioramaIndex + 1); }
+      else if (e.code === 'ArrowLeft') { dioramaGoTo(dioramaIndex - 1); }
+    });
+
+    dioramaShowSlide(0, true);
+    dioramaSetAnimationPauseState(true); // start paused on the poster frame
+    dioramaBuilt = true;
+  }
+
+  function ensureDioramaBuilt() {
+    if (!dioramaBuilt) buildDioramaPlayer();
   }
 
   function renderArtist(slug) {
@@ -488,6 +651,10 @@
 
   function showView(name) {
     if (VALID_VIEWS.indexOf(name) === -1) return;
+    var previouslyActive = document.querySelector('.view.is-active');
+    var leavingDiorama = previouslyActive && previouslyActive.getAttribute('data-view-target') === 'diorama' && name !== 'diorama';
+    if (leavingDiorama) dioramaPause();
+
     var views = document.querySelectorAll('.view');
     for (var i = 0; i < views.length; i++) views[i].classList.remove('is-active');
     var target = document.querySelector('[data-view-target="' + name + '"]');
@@ -504,7 +671,7 @@
     document.getElementById('mobile-menu').classList.remove('is-open');
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (name === 'gallery') renderGallery();
-    if (name === 'diorama') renderDiorama();
+    if (name === 'diorama') ensureDioramaBuilt();
     if (name === 'family')  renderFamily();
   }
 
@@ -586,6 +753,12 @@
     if (window.scrollY > 12) nav.classList.add('scrolled');
     else nav.classList.remove('scrolled');
   }, { passive: true });
+
+  // Pause the diorama when the tab is hidden (saves CPU/battery, avoids
+  // a huge stale timeout firing all at once when the tab regains focus)
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden && dioramaPlaying) dioramaPause();
+  });
 
   // ─── BOOT ────────────────────────────────────────────────────
 
