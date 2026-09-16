@@ -1111,6 +1111,10 @@ main { position: relative; z-index: 10; }
 }
 .diorama-ctrl-btn-main:hover { background: var(--umber-700); }
 .diorama-ctrl-btn-main svg { position: absolute; }
+.diorama-ctrl-btn[aria-pressed="true"] {
+  border-color: var(--ochre-500);
+  color: var(--ochre-600);
+}
 .diorama-counter {
   margin-left: auto;
   font-family: var(--font-mono);
